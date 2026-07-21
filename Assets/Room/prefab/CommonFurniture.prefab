@@ -60,7 +60,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isMoveMode: 0
+  isOverlapping: 0
   placementLayerMask:
+    serializedVersion: 2
+    m_Bits: 136
+  ignoreOverlapMask:
     serializedVersion: 2
     m_Bits: 136
 --- !u!114 &533046299681743168

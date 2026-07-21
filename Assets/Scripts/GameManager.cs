@@ -57,6 +57,14 @@ public class GameManager : MonoBehaviour
 
     [Header("현재 배치 / 수정 대기 중인 가구 오브젝트")]
     public GameObject currentSpawnedObject;
+
+
+    [Header("UI 팝업")]
+    public GameObject warningPopupPanel; // 경고 팝업 ui 오브젝트
+    public TMPro.TMP_Text warningText; // (선택사항) 경고 문구 텍스트
+
+    private Coroutine warningCoroutine;
+
     
     private void Awake()
     {
@@ -592,5 +600,31 @@ public class GameManager : MonoBehaviour
 
     public void SetNormalMode() => ChangeMode(GameMode.Normal);
     public void SetBuildMode() => ChangeMode(GameMode.Build);
+
+
+    // 경고 팝업 호출 함수
+    public void ShowWarningPopup(string message = "해당 위치에는 가구를 놓을 수 없습니다.")
+    {
+        if (warningPopupPanel == null) return;
+
+        if (warningText != null)
+        {
+            warningText.text = message;
+        }
+
+        if (warningCoroutine != null)
+        {
+            StopCoroutine(warningCoroutine);
+        }
+
+        warningCoroutine = StartCoroutine(HideWarningPopupRoutine(2.0f)); // 2초 후 자동 비활성화
+    }
+
+    private IEnumerator HideWarningPopupRoutine(float delay)
+    {
+        warningPopupPanel.SetActive(true);
+        yield return new WaitForSeconds(delay);
+        warningPopupPanel.SetActive(false);
+    }
 }
 
