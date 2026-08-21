@@ -101,7 +101,14 @@ public class SelectionManager : MonoBehaviour
     private void SetLayerRecursively(GameObject obj, int newLayer)
     {
         if (obj == null) return;
-        obj.layer = newLayer;
+
+        // FurnitureSurface 레이어는 변경하지 않고 보호
+        int surfaceLayer = LayerMask.NameToLayer("FurnitureSurface");
+        if (obj.layer != surfaceLayer)
+        {
+            obj.layer = newLayer;
+        }
+        
         foreach (Transform child in obj.transform)
         {
             if (child == null) continue;

@@ -15,5 +15,5 @@ MonoBehaviour:
   furnitureName: Desk1
   furniturePrefab: {fileID: 6474274639056150565, guid: fbc99a368d783e44998c212d227b7857,
     type: 3}
-  categoryGroup: A
+  categoryGroup: B
   furnitureIcon: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
-  m_Name: Sofa1
+  m_Name: Chair1
   m_EditorClassIdentifier: 
-  furnitureName: Sofa1
-  furniturePrefab: {fileID: 1914342825901766475, guid: 7da51afeea80525489b8af6631c6ee54,
+  furnitureName: Chair1
+  furniturePrefab: {fileID: 1641813751698830088, guid: 2fe2e783ac723d54b907f3bf47e76492,
     type: 3}
   categoryGroup: A
-  furnitureIcon: {fileID: 21300000, guid: 754b47715c44b8e43b444b0658338694, type: 3}
+  furnitureIcon: {fileID: 21300000, guid: a952235abc59b5d47a2cfb3c0571e057, type: 3}
