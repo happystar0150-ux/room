@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
+  m_Name: Lamp1
+  m_EditorClassIdentifier: 
+  furnitureName: Lamp1
+  furniturePrefab: {fileID: 7917215855168248260, guid: d347ee77c17981c478065dc073f9adca,
+    type: 3}
+  categoryGroup: E
+  furnitureIcon: {fileID: 0}

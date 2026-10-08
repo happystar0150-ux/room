@@ -2,10 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 //using System.Timers;
 using UnityEngine;
+using UnityEngine.UI;
 
+[System.Serializable]
+public class CategoryButtonData
+{
+    public string categoryName;         // Ä«ï¿½×°ï¿½ï¿½ï¿½ï¿½
+    public Image buttonImage;           // ï¿½ï¿½Æ° image ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+    public Sprite normalSprite;         // ï¿½âº» ï¿½Ì¹ï¿½ï¿½ï¿½
+    public Sprite selectedSprite;       // ï¿½ï¿½ï¿½ÃµÇ¾ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ì¹ï¿½ï¿½ï¿½   
+}
 public class GameManager : MonoBehaviour
 {
-    // ÇöÀç °ÔÀÓ ¸ðµå
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
     public GameMode currentMode = GameMode.Normal;
 
     
@@ -16,6 +25,8 @@ public class GameManager : MonoBehaviour
     public GameObject moveUIPanel;
     public GameObject addUIPanel;
     public GameObject deleteConfirmPopUP;
+    public GameObject restartConfirmPopUP;
+
     
 
     [Header("Furniture Spawn System")]
@@ -24,13 +35,13 @@ public class GameManager : MonoBehaviour
    
 
     [Header("Camera Reference")]
-    public Transform cameraTransform; // ¸ÞÀÎ Ä«¸Þ¶ó Transform
-    public Vector3 cameraOffset = new Vector3(0, 5, -5); // ¿ÀºêÁ§Æ®¸¦ ¹Ù¶óº¼ Ä«¸Þ¶óÀÇ »ó´ëÀû À§Ä¡°ª
+    public Transform cameraTransform; // ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ Transform
+    public Vector3 cameraOffset = new Vector3(0, 5, -5); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ù¶ï¿½ Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½
 
-    // ÇöÀç ¼±ÅÃ ÁßÀÎ ¿ÀºêÁ§Æ® transform ±â¾ï
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® transform ï¿½ï¿½ï¿½
     private Transform selectedTarget;
 
-    // ¸ðµåº° Ä«¸Þ¶ó Á¤º¸
+    // ï¿½ï¿½åº° Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½
     // normal
     private Vector3 normalCameraPosition;
     private Quaternion normalCameraRotation;
@@ -40,30 +51,37 @@ public class GameManager : MonoBehaviour
 
     private Coroutine cameraMoveCoroutine;
 
-    // ¿ÀºêÁ§Æ® »ý¼º¶§ Á¶ÀÛÁßÀÎ °¡±¸ ¿ÀºêÁ§Æ®¸¦ ±â¾ï
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½
     private GameObject currentActiveFurniture;
 
 
 
     public static GameManager Instance { get; private set; }
 
-    [Header("°¡±¸ ¸ñ·Ï")]
-    // ÇÁ·ÎÁ§Æ® Ã¢ÀÇ ¸ðµç °¡±¸ µ¥ÀÌÅÍ¸¦ ³Ö¾îµÑ ¸®½ºÆ®
+    [Header("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½")]
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® Ã¢ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½Ö¾ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
     public List<FurnitureData> allFurnitureDataList = new List<FurnitureData>();
-    // °¡±¸ ¾ÆÀÌÅÛ ¹öÆ° ºÎÇ°
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½Ç°
     public GameObject furnitureItemPrefab;
-    // FurnitureContent ºÎ¸ð ¿ÀºêÁ§Æ®
+    // FurnitureContent ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
     public Transform furnitureContentParent;
 
-    [Header("ÇöÀç ¹èÄ¡ / ¼öÁ¤ ´ë±â ÁßÀÎ °¡±¸ ¿ÀºêÁ§Æ®")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ / ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®")]
     public GameObject currentSpawnedObject;
 
 
-    [Header("UI ÆË¾÷")]
-    public GameObject warningPopupPanel; // °æ°í ÆË¾÷ ui ¿ÀºêÁ§Æ®
-    public TMPro.TMP_Text warningText; // (¼±ÅÃ»çÇ×) °æ°í ¹®±¸ ÅØ½ºÆ®
+    [Header("UI ï¿½Ë¾ï¿½")]
+    public GameObject warningPopupPanel; // ï¿½ï¿½ï¿½ ï¿½Ë¾ï¿½ ui ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+    public TMPro.TMP_Text warningText; // (ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½) ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ®
 
     private Coroutine warningCoroutine;
+
+
+
+    [Header("Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½")]
+    // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ a, b, c, d, e Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
+    public List<CategoryButtonData> categoryButtonList = new List<CategoryButtonData>();
+
 
     
     private void Awake()
@@ -72,15 +90,16 @@ public class GameManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
+    
     private void Update()
     {
         
-        // build ¸ðµåÀÏ¶§ °¡±¸ Å¬¸¯ Àç¼±ÅÃ °¨Áö
+        // build ï¿½ï¿½ï¿½ï¿½Ï¶ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ ï¿½ç¼±ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (currentMode == GameMode.Build)
         {
             if (Input.GetMouseButtonDown(0))
             {
-                // ui Å¬¸¯ ÁßÀÌ¸é ¹«½Ã
+                // ui Å¬ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
                     return;
 
@@ -89,52 +108,52 @@ public class GameManager : MonoBehaviour
         }
         
 
-        // Å×½ºÆ®
+        // ï¿½×½ï¿½Æ®
         if (Input.GetMouseButtonDown(0))
         {
-            Debug.Log($"¸¶¿ì½º Å¬¸¯µÊ! ÇöÀç °ÔÀÓ ¸ðµå: {currentMode}");
+            Debug.Log($"ï¿½ï¿½ï¿½ì½º Å¬ï¿½ï¿½ï¿½ï¿½! ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½: {currentMode}");
 
             if (UnityEngine.EventSystems.EventSystem.current != null &&
                 UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
-                Debug.LogWarning("ÇöÀç ¸¶¿ì½º À§Ä¡ ¾Æ·¡ UI ¿ä¼Ò°¡ ÀÖ¾î Å¬¸¯ÀÌ Â÷´ÜµÇ¾ú½À´Ï´Ù!");
+                Debug.LogWarning("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ì½º ï¿½ï¿½Ä¡ ï¿½Æ·ï¿½ UI ï¿½ï¿½Ò°ï¿½ ï¿½Ö¾ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ÜµÇ¾ï¿½ï¿½ï¿½ï¿½Ï´ï¿½!");
                 return;
             }
 
             if (currentMode != GameMode.Build)
             {
-                Debug.Log($"ÇöÀç ¸ðµå°¡ Build°¡ ¾Æ´Ï¶ó '{currentMode}'¶ó¼­ ·¹ÀÌÄ³½ºÆ®¸¦ ½îÁö ¾Ê¾Ò½À´Ï´Ù.");
+                Debug.Log($"ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½å°¡ Buildï¿½ï¿½ ï¿½Æ´Ï¶ï¿½ '{currentMode}'ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½.");
                 return;
             }
 
-            Debug.Log("¸ðµç Á¶°ÇÀ» ¸¸Á·ÇÏ¿© ·¹ÀÌÀú¸¦ ¹ß»çÇÕ´Ï´Ù.");
+            Debug.Log("ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½ï¿½Õ´Ï´ï¿½.");
             HandleFurnitureSelectionClick();
         }
     }
 
-    // ¸¶¿ì½º ·¹ÀÌÀú·Î °¡±¸¸¦ Á¶ÁØÇØ¼­ ¼±ÅÃÇÏ´Â ÇÔ¼ö
+    // ï¿½ï¿½ï¿½ì½º ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Ô¼ï¿½
     private void HandleFurnitureSelectionClick()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
-        Debug.Log("·¹ÀÌÀú ¹ß»ç");
+        Debug.Log("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½");
 
         if (Physics.Raycast(ray, out hit, 500f))
         {
-            Debug.Log($"·¹ÀÌÀú°¡ ºÎµúÈù ¿ÀºêÁ§Æ®: {hit.transform.name}");
+            Debug.Log($"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Îµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®: {hit.transform.name}");
 
-            // ºÎµúÈù ÀÚ½Ä ÄÝ¶óÀÌ´õÀÇ ºÎ¸ð¿¡¼­ SelectionManager¸¦ Ã£½À´Ï´Ù
+            // ï¿½Îµï¿½ï¿½ï¿½ ï¿½Ú½ï¿½ ï¿½Ý¶ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ ï¿½Î¸ð¿¡¼ï¿½ SelectionManagerï¿½ï¿½ Ã£ï¿½ï¿½ï¿½Ï´ï¿½
             SelectionManager selManager = hit.transform.GetComponentInParent<SelectionManager>();
 
             if (selManager != null)
             {
-                Debug.Log($"[°¡±¸ ¼±ÅÃ ¼º°ø] {selManager.gameObject.name} ÆíÁýÀ» ½ÃÀÛÇÕ´Ï´Ù.");
+                Debug.Log($"[ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½] {selManager.gameObject.name} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.");
                 selManager.OnSelectedByClick();
             }
             else
             {
-                Debug.LogWarning($"{hit.transform.name}ÀÇ ºÎ¸ð¿¡¼­ SelectionManager¸¦ Ã£Áö ¸øÇß½À´Ï´Ù.");
+                Debug.LogWarning($"{hit.transform.name}ï¿½ï¿½ ï¿½Î¸ð¿¡¼ï¿½ SelectionManagerï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½.");
             }
         }
     }
@@ -143,7 +162,7 @@ public class GameManager : MonoBehaviour
     {
         
 
-        // Ä«¸Þ¶ó ¼¼ÆÃ
+        // Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½
         // normal
         normalCameraPosition = cameraTransform.position;
         normalCameraRotation = cameraTransform.rotation;
@@ -152,19 +171,23 @@ public class GameManager : MonoBehaviour
         buildCameraRotation = cameraTransform.rotation;
 
 
-        // °ÔÀÓ ½ÃÀÛ ½Ã ±âº» ¸ðµå·Î ¼³Á¤
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½âº» ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         ChangeMode(GameMode.Normal);
 
         if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(false);
         if (moveUIPanel != null) moveUIPanel.SetActive(false);
+        if (restartConfirmPopUP != null) restartConfirmPopUP.SetActive(false);
+
+        
+
     }
 
-    // ¸ðµå º¯°æ ÇÔ¼ö (UI¹öÆ°¿¡ ¿¬°á)
+    // ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½ (UIï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
     public void ChangeMode(GameMode newMode)
     {
         currentMode = newMode;
 
-        // »óÅÂ¿¡ µû¸¥ UI ¹× ½Ã½ºÅÛ È°¼ºÈ­/ºñÈ°¼ºÈ­
+        // ï¿½ï¿½ï¿½Â¿ï¿½ ï¿½ï¿½ï¿½ï¿½ UI ï¿½ï¿½ ï¿½Ã½ï¿½ï¿½ï¿½ È°ï¿½ï¿½È­/ï¿½ï¿½È°ï¿½ï¿½È­
         switch (currentMode)
         {
             case GameMode.Normal:
@@ -174,7 +197,7 @@ public class GameManager : MonoBehaviour
                 addUIPanel.SetActive(false);
                 
 
-                // ÀÏ¹Ý ¸ðµå·Î µ¹¾Æ¿Ã ¶§ Ä«¸Þ¶ó ¿øÀ§Ä¡
+                // ï¿½Ï¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ¿ï¿½ ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡
                 if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
                 cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(normalCameraPosition, normalCameraRotation));
                 break;
@@ -186,7 +209,7 @@ public class GameManager : MonoBehaviour
                 addUIPanel.SetActive(false);
 
                 /*
-                // °ÇÃà ¸ðµå·Î ÁøÀÔÇÏ´Â ¼ø°£ÀÇ Ä«¸Þ¶ó »óÅÂ¸¦ ¹é¾÷
+                // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½Â¸ï¿½ ï¿½ï¿½ï¿½
                 if (buildCameraPosition == normalCameraPosition || buildCameraPosition == Vector3.zero)
                 {
                     buildCameraPosition = cameraTransform.position;
@@ -202,66 +225,71 @@ public class GameManager : MonoBehaviour
                 editUIPanel.SetActive(false);
                 addUIPanel.SetActive(true);
 
-                // A Ä«Å×°í¸® ¹Ù·Î ¿ÀÇÂ
+                // A Ä«ï¿½×°ï¿½ï¿½ ï¿½Ù·ï¿½ ï¿½ï¿½ï¿½ï¿½
                 FilterFurnitureMenu("A");
                 break;
         }
     }
 
 
-    // ¿ÀºêÁ§Æ® »ý¼º
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
     public void ClickSpawnButtonAtCenter(FurnitureData data)
     {
         if (data == null) return;
   
-        // ¹æ ÇÑ°¡¿îµ¥ ÁÂÇ¥ ¹× È¸Àü ¼³Á¤
+        // ï¿½ï¿½ ï¿½Ñ°ï¿½ï¿½îµ¥ ï¿½ï¿½Ç¥ ï¿½ï¿½ È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         Vector3 centerPos = new Vector3(0.5f, 0f, 0f);
         Quaternion targetRotation = Quaternion.Euler(-90f, 0f, 0f);
 
-        // ±âÁ¸ Á¶ÀÛ °¡±¸ Á¦°Å (È¤½Ã¸ô¸£´Ï±î)
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (È¤ï¿½Ã¸ï¿½ï¿½ï¿½Ï±ï¿½)
         if (currentSpawnedObject != null) Destroy(currentSpawnedObject);
 
-        // ÇÁ¸®ÆÕÀ¸·Î ÁøÂ¥ °¡±¸ »ý¼º
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Â¥ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         currentSpawnedObject = Instantiate(commonFurniturePrefab, centerPos, targetRotation);
 
-        // ¹ÎÆ® ¼ÒÆÄ ¿ÜÇü Àû¿ë
+        // ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         FurnitureSetup setup = currentSpawnedObject.GetComponent<FurnitureSetup>();
         if (setup != null)
         {
             setup.SetupFurniture(data);
         }
 
-        // È®Á¤ ÀüÀÌ¹Ç·Î Ä«¸Þ¶ó³ª ¼±ÅÃ ·¹ÀÌ¾î Ã³¸® ÇÏÁö ¾ÊÀ½
-        // À¯Àú°¡ ¸ñ·Ï ui º¸°í °¡±¸¸¦ °í¸¦ ¼ö ÀÖµµ·Ï ´ë±â
+        // È®ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¹Ç·ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½ Ã³ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ui ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Öµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 
-        // ¸ðµå¸¦ Add ¸ðµå·Î º¯°æ
+        // ï¿½ï¿½å¸¦ Add ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         ChangeMode(GameMode.Add);
 
     }
 
+    
 
 
-    // Ä«Å×°í¸® ¹öÆ° Å¬¸¯½Ã ÇØ´ç °¡±¸¸¸ °ñ¶ó³»´Â ÇÊÅÍ ÇÔ¼ö
+
+    // Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½Æ° Å¬ï¿½ï¿½ï¿½ï¿½
     public void FilterFurnitureMenu(string categoryToFilter)
     {
-        Debug.Log($"{categoryToFilter} Ä«Å×°í¸®°¡ ¼±ÅÃµÇ¾ú½À´Ï´Ù! ¸ñ·ÏÀ» º¯°æÇÕ´Ï´Ù.");
+        Debug.Log($"{categoryToFilter} Ä«ï¿½×°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ÃµÇ¾ï¿½ï¿½ï¿½ï¿½Ï´ï¿½! ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.");
 
-        // 1. ÇöÀç È­¸éÀÇ °¡±¸ ¸ñ·Ï ¾ÆÀÌÅÛ ui¸¦ »èÁ¦
+        // 0. ï¿½Ì¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®(ï¿½ï¿½ï¿½ï¿½)
+        UpdateCategoryButtonImages(categoryToFilter);
+
+        // 1. ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ uiï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         foreach (Transform child in furnitureContentParent)
         {
             Destroy(child.gameObject);
         }
 
-        // 2. ÀüÃ¼ °¡±¸ µ¥ÀÌÅÍ Áß¿¡¼­ ¹æ±Ý Å¬¸¯ÇÑ Ä«Å×°í¸®¿Í ÀÏÄ¡ÇÏ´Â °¡±¸¸¸ ¹öÆ°À¸·Î »ý¼º
+        // 2. ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½×°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         foreach (FurnitureData data in allFurnitureDataList)
         {
-            // ´ë¼Ò¹®ÀÚ ±¸ºÐ, ºóÄ­ ¾øÀÌ ¶È°°ÀºÁö ºñ±³
+            // ï¿½ï¿½Ò¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½Ä­ ï¿½ï¿½ï¿½ï¿½ ï¿½È°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
             if (data.categoryGroup.Trim().Equals(categoryToFilter.Trim(), System.StringComparison.OrdinalIgnoreCase))
             {
-                // ¹öÆ° ÇÁ¸®ÆÕ »ý¼º
+                // ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 GameObject newBtn = Instantiate(furnitureItemPrefab, furnitureContentParent);
 
-                // »ý¼ºµÈ ¹öÆ°¿¡ °¡±¸ µ¥ÀÌÅÍ(ÀÌ¸§, ¾ÆÀÌÄÜ) ÁÖÀÔ
+                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½Ì¸ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½ï¿½ï¿½
                 FurnitureItemUI itemUI = newBtn.GetComponent<FurnitureItemUI>();
                 if (itemUI != null)
                 {
@@ -271,21 +299,53 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // °¡±¸ ¸ñ·Ï ui¿¡¼­ ´Ù¸¥ °¡±¸¸¦ Å¬¸¯ ÇßÀ» ¶§ È£ÃâÇÒ ÇÔ¼ö
+    // ï¿½Ì¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
+    private void UpdateCategoryButtonImages(string activeCategory)
+    {
+        foreach (var btnData in categoryButtonList)
+        {
+            if (btnData.buttonImage == null)
+            {
+                Debug.LogWarning($"[{btnData.categoryName}] ï¿½ï¿½Æ°ï¿½ï¿½ buttonImageï¿½ï¿½ ï¿½Ò´ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½!");
+                continue;
+            }
+
+            if (btnData.selectedSprite == null || btnData.normalSprite == null)
+            {
+                Debug.LogWarning($"[{btnData.categoryName}] ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®(Normal/Selected)ï¿½ï¿½ ï¿½Ò´ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½!");
+            }
+
+            bool isMatch = btnData.categoryName.Trim().Equals(activeCategory.Trim(), System.StringComparison.OrdinalIgnoreCase);
+
+            // ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½Ïµï¿½ Ä«ï¿½×°ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ Ä«ï¿½×°ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ù¸ï¿½
+            if (btnData.categoryName.Trim().Equals(activeCategory.Trim(), System.StringComparison.OrdinalIgnoreCase))
+            {
+                // ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+                btnData.buttonImage.sprite = btnData.selectedSprite;
+            }
+            else
+            {
+                // ï¿½Ù¸ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â·ï¿½ ï¿½ï¿½ï¿½ï¿½
+                btnData.buttonImage.sprite = btnData.normalSprite;
+            }
+        }
+    }
+
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ uiï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ È£ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
     public void SwitchFurnitureData(FurnitureData newData)
     {
         
 
         if (currentSpawnedObject == null)
         {
-            Debug.LogWarning("ÇöÀç È­¸é¿¡ Á¶ÀÛ ÁßÀÎ °¡±¸ ¿ÀºêÁ§Æ®°¡ ¾ø½À´Ï´Ù!");
+            Debug.LogWarning("ï¿½ï¿½ï¿½ï¿½ È­ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½!");
             return;
         }
 
 
-        Debug.Log($"°¡±¸ ¿ÜÇüÀ» '{newData.furnitureName}'(À¸)·Î ÀüÈ¯ÇÕ´Ï´Ù.");
+        Debug.Log($"ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ '{newData.furnitureName}'(ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½È¯ï¿½Õ´Ï´ï¿½.");
 
-        // FurnitureSetup¿¡°Ô »õ µ¥ÀÌÅÍ ³Ñ°ÜÁÖ±â
+        // FurnitureSetupï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ°ï¿½ï¿½Ö±ï¿½
         FurnitureSetup setup = currentSpawnedObject.GetComponent<FurnitureSetup>();
         if (setup != null)
         {
@@ -294,42 +354,42 @@ public class GameManager : MonoBehaviour
 
     }
 
-    // È®Á¤ ÈÄ ÆíÁý ¸ðµå ÀüÈ¯
+    // È®ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½È¯
     public void ConfirmPlacement()
     {
         if (currentSpawnedObject == null) return;
 
         
 
-        // ÁøÂ¥ ¹èÄ¡µÈ °¡±¸·Î ¹Ù²ãÁÜ
+        // ï¿½ï¿½Â¥ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù²ï¿½ï¿½ï¿½
         GameObject confirmedFurniture = currentSpawnedObject;
 
-        // º¯¼ö ºñ¿ì±â
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         currentSpawnedObject = null;
 
-        // ·¹ÀÌ¾î º¯°æ
+        // ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½
         SetLayerRecursively(confirmedFurniture, LayerMask.NameToLayer("Selected"));
 
-        // ¿Ü°û¼±
+        // ï¿½Ü°ï¿½ï¿½ï¿½
         SelectionManager selManager = confirmedFurniture.GetComponent<SelectionManager>();
         if (selManager != null)
         {
             selManager.SetStencilValue(15);
         }
 
-        // ¼±ÅÃ(ÆíÁý¸ðµå+ÁÜÀÎ)½ÃÅ°±â
+        // ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½+ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½Å°ï¿½ï¿½
         SelectionObject(confirmedFurniture.transform);
 
-        // ¸ðµå º¯°æ
+        // ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         currentMode = GameMode.Build;
     }
 
-    // ÀÚ½Äµµ Àû¿ë
+    // ï¿½Ú½Äµï¿½ ï¿½ï¿½ï¿½ï¿½
     private void SetLayerRecursively(GameObject obj, int newLayer)
     {
         if (obj == null) return;
 
-        // ¸¸¾à ÇöÀç ¿ÀÇÁÁ§Æ®ÀÇ ·¹ÀÌ¾î°¡ 'FurnitureSurface'¶ó¸é ·¹ÀÌ¾î¸¦ ¹Ù²ÙÁö ¾Ê°í À¯Áö
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾î°¡ 'FurnitureSurface'ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾î¸¦ ï¿½Ù²ï¿½ï¿½ï¿½ ï¿½Ê°ï¿½ ï¿½ï¿½ï¿½ï¿½
         int surfaceLayer = LayerMask.NameToLayer("FurnitureSurface");
         if (obj.layer != surfaceLayer)
         {
@@ -343,53 +403,62 @@ public class GameManager : MonoBehaviour
         }
     }
 
-   
+   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+   public void CancelSpawn()
+    {
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        if (currentSpawnedObject != null)
+        {
+            Destroy(currentSpawnedObject);
+            currentSpawnedObject = null; // ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­
+        }
+    }
 
    
 
 
 
 
-    // ¿ÀºêÁ§Æ® ¼±ÅÃ ½Ã
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
     public void SelectionObject(Transform targetTransform)
     {
-        // ÆíÁý UI È°¼ºÈ­
+        // ï¿½ï¿½ï¿½ï¿½ UI È°ï¿½ï¿½È­
         editUIPanel.SetActive(true);
 
-        // °ÇÃà UI ºñÈ°¼ºÈ­
+        // ï¿½ï¿½ï¿½ï¿½ UI ï¿½ï¿½È°ï¿½ï¿½È­
         buildUIPanel.SetActive(false);
 
-        // »ý¼º UI ºñÈ°¼ºÈ­
+        // ï¿½ï¿½ï¿½ï¿½ UI ï¿½ï¿½È°ï¿½ï¿½È­
         addUIPanel.SetActive(false);
 
-        // ¼±ÅÃ ¿ÀºêÁ§Æ® ±â¾ï
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½
         selectedTarget = targetTransform;
 
         
 
-        // Ä«¸Þ¶ó ÀÌµ¿
+        // Ä«ï¿½Þ¶ï¿½ ï¿½Ìµï¿½
         if (cameraMoveCoroutine != null ) StopCoroutine(cameraMoveCoroutine);
         cameraMoveCoroutine = StartCoroutine(MoveCameraToTarget(targetTransform.position));
     }
 
-    // ¿ÀºêÁ§Æ® ¼±ÅÃ ÇØÁ¦ ½Ã
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
     public void DeselectObject()
     {
-        // ÆíÁý UI ºñÈ°¼ºÈ­
+        // ï¿½ï¿½ï¿½ï¿½ UI ï¿½ï¿½È°ï¿½ï¿½È­
         editUIPanel.SetActive(false);
 
-        // °ÇÃà UI È°¼ºÈ­
+        // ï¿½ï¿½ï¿½ï¿½ UI È°ï¿½ï¿½È­
         buildUIPanel.SetActive(true);
 
-        // ±â¾ïÁßÀÎ ¿ÀºêÁ§Æ® ÀØ±â
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ø±ï¿½
         selectedTarget = null;
 
-        // Ä«¸Þ¶ó º¹±Í
+        // Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
         cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(buildCameraPosition, buildCameraRotation));
     }
 
-    // Ä«¸Þ¶ó¸¦ ºÎµå·´°Ô Å¸°Ù À§Ä¡(+¿ÀÇÁ¼Â)·Î ÀÌµ¿½ÃÅ°´Â ÄÚ·çÆ¾
+    // Ä«ï¿½Þ¶ï¿½ ï¿½Îµå·´ï¿½ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½Ä¡(+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½ ï¿½Ìµï¿½ï¿½ï¿½Å°ï¿½ï¿½ ï¿½Ú·ï¿½Æ¾
     private IEnumerator MoveCameraToTarget(Vector3 targetPosition)
     {
         Vector3 desiredPosition = targetPosition + cameraOffset;
@@ -407,7 +476,7 @@ public class GameManager : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
 
-            // ºÎµå·¯¿î °¡¼Ó/°¨¼Ó ¿¬Ãâ
+            // ï¿½Îµå·¯ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             t = Mathf.SmoothStep(0f, 1f, t);
 
             cameraTransform.position = Vector3.Lerp(startPosition, desiredPosition, t);
@@ -443,7 +512,7 @@ public class GameManager : MonoBehaviour
         cameraTransform.rotation = targetRot;
     }
 
-    // ÆíÁý ¿Ï·á(ÄÁÆß) ¹öÆ°
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ï·ï¿½(ï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½Æ°
     public void CompleteEditing()
     {
         SelectionManager[] selectedObjects = FindObjectsOfType<SelectionManager>();
@@ -454,48 +523,48 @@ public class GameManager : MonoBehaviour
                 obj.ResetSelection();
             }
         }
-        // ¼±ÅÃ ÇØÁ¦ ¹× Ä«¸Þ¶ó º¹±¸ ·ÎÁ÷
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         DeselectObject();
-        // °ÔÀÓ ¸ðµå build·Î º¯°æ
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ buildï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         ChangeMode(GameMode.Build);
     }
     
 
-    // ¿ÀºêÁ§Æ® ÀÌµ¿
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ìµï¿½
     public void StartMoveMode()
     {
         if (selectedTarget == null) return;
 
         
 
-        // ÆíÁý UI ²ô°í ÀÌµ¿ UI ÄÑ±â
+        // ï¿½ï¿½ï¿½ï¿½ UI ï¿½ï¿½ï¿½ ï¿½Ìµï¿½ UI ï¿½Ñ±ï¿½
         editUIPanel.SetActive(false);
         if (moveUIPanel != null) moveUIPanel.SetActive(true);
 
-        // Ä«¸Þ¶ó À§Ä¡ µÇµ¹¸®±â
+        // Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½Ä¡ ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½
         if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
         cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(buildCameraPosition, buildCameraRotation));
 
-        // ÇØ´ç ¿ÀºêÁ§Æ®ÀÇ ObjectDrag ½ºÅ©¸³Æ® Ã£¾Æ ÀÌµ¿ °¡´É »óÅÂ·Î ¸¸µê
+        // ï¿½Ø´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ObjectDrag ï¿½ï¿½Å©ï¿½ï¿½Æ® Ã£ï¿½ï¿½ ï¿½Ìµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â·ï¿½ ï¿½ï¿½ï¿½ï¿½
         ObjectDrag dragScript = selectedTarget.GetComponent<ObjectDrag>();
         if (dragScript != null) dragScript.isMoveMode = true;
         
     }
 
-    // È¸Àü ¹öÆ° Å¬¸¯ ½Ã
-    public void RotateObject(float angle) // angle¿¡ 45 È¤Àº -45
+    // È¸ï¿½ï¿½ ï¿½ï¿½Æ° Å¬ï¿½ï¿½ ï¿½ï¿½
+    public void RotateObject(float angle) // angleï¿½ï¿½ 45 È¤ï¿½ï¿½ -45
     {
         if (selectedTarget != null)
         {
             /*
-             * //º»ÀÎÀ» ±âÁØÀ¸·Î ÇÏ´Â°Å
+             * //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï´Â°ï¿½
             
             selectedTarget.Rotate(Vector3.up, angle, Space.Self);
-            Debug.Log($"{selectedTarget.name} È¸ÀüµÊ! ÇöÀç °¢µµ: {selectedTarget.eulerAngles.y}");
+            Debug.Log($"{selectedTarget.name} È¸ï¿½ï¿½ï¿½ï¿½! ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: {selectedTarget.eulerAngles.y}");
             */
 
-            // ¿ùµå ÁÂÇ¥ ±âÁØÀ¸·Î ÇÏ´Â°Å
-            // ÇöÀç È¸Àü°ª¿¡¼­ YÃà ±âÁØÀ¸·Î angle¸¸Å­ ´õ È¸Àü
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï´Â°ï¿½
+            // ï¿½ï¿½ï¿½ï¿½ È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Yï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ angleï¿½ï¿½Å­ ï¿½ï¿½ È¸ï¿½ï¿½
             if (selectedTarget != null)
             {
                 selectedTarget.Rotate(Vector3.up, angle, Space.World);
@@ -503,29 +572,29 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // µå·¡±× ³¡³µÀ» ¶§ (¸¶¿ì½º¿¡¼­ ¼Õ ¶ÃÀ» ¶§)
+    // ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ (ï¿½ï¿½ï¿½ì½ºï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)
     public void CheckPlacementValidity()
     {
         
         bool canPlace = true;
 
-        /* // ³ªÁß¿¡ Ãß°¡ÇØ¿ä:
-         * if (º®¿¡ ºÎµúÈ÷°Å³ª ´Ù¸¥ °¡±¸¿Í °ãÄ£´Ù¸é)
+        /* // ï¿½ï¿½ï¿½ß¿ï¿½ ï¿½ß°ï¿½ï¿½Ø¿ï¿½:
+         * if (ï¿½ï¿½ï¿½ï¿½ ï¿½Îµï¿½ï¿½ï¿½ï¿½Å³ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä£ï¿½Ù¸ï¿½)
          * {
          *     canPlace = false
          * }
          */
 
-        // ³õÀ» ¼ö ÀÖÀ¸¸é
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (canPlace)
         {
 
-            Debug.Log("µå·¡±× ÀÓ½Ã ¹èÄ¡ ¿Ï·á (ÀÌµ¿ ¸ðµå À¯Áö Áß)");
+            Debug.Log("ï¿½å·¡ï¿½ï¿½ ï¿½Ó½ï¿½ ï¿½ï¿½Ä¡ ï¿½Ï·ï¿½ (ï¿½Ìµï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)");
             
         }
         else
         {
-            // ³õÀ» ¼ö ¾ø´Â °æ¿ì Á¦ÀÚ¸®·Î Æ¨±â°í °æ°í ¿¬Ãâ
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ Æ¨ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         }
     }
 
@@ -533,41 +602,41 @@ public class GameManager : MonoBehaviour
     {
         if (selectedTarget == null) return;
 
-        // ÀÌµ¿ ¸ðµå¸¦ Á¾·áÇÏ°í ´Ù½Ã ¼±ÅÃ »óÅÂ·Î ¹é¾÷
+        // ï¿½Ìµï¿½ ï¿½ï¿½å¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â·ï¿½ ï¿½ï¿½ï¿½
         ObjectDrag dragScript = selectedTarget.GetComponent<ObjectDrag>();
-        if (dragScript != null) dragScript.isMoveMode = false; // µå·¡±× Àá±Ý
+        if (dragScript != null) dragScript.isMoveMode = false; // ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½
 
-        // ÀÌµ¿ UI ²ô°í ´Ù½Ã ÆíÁý UI ÄÑ±â
+        // ï¿½Ìµï¿½ UI ï¿½ï¿½ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ UI ï¿½Ñ±ï¿½
         if (moveUIPanel != null) moveUIPanel.SetActive(false);
         editUIPanel.SetActive(true);
 
-        // ´Ù½Ã ¾ÆÀÌÅÛÀ» Å¸°ÙÀ¸·Î Ä«¸Þ¶ó ÁÜÀÎ
+        // ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
         cameraMoveCoroutine = StartCoroutine(MoveCameraToTarget(selectedTarget.position));
     }
 
 
 
-    // ¿ÀºêÁ§Æ® »èÁ¦
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
     public void ClickDeleteButton()
     {
-        // ÆË¾÷
+        // ï¿½Ë¾ï¿½
         if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(true);
     }
 
-    // [¿¹] ´­·¶À»¶§
+    // [ï¿½ï¿½] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public void ConfirmDelete()
     {
         if (selectedTarget != null)
         {
-            // ¾À¿¡¼­ ¿ÀºêÁ§Æ® Á¦°Å
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
             Destroy(selectedTarget.gameObject);
         }
 
-        // ÆË¾÷ ´Ý±â
+        // ï¿½Ë¾ï¿½ ï¿½Ý±ï¿½
         if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(false);
 
-        // Ä«¸Þ¶ó º¹±¸ ¹× ÆíÁý ¸ðµå Á¾·á
+        // Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         editUIPanel.SetActive(false);
         buildUIPanel.SetActive(true);
         selectedTarget = null;
@@ -576,20 +645,20 @@ public class GameManager : MonoBehaviour
         cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(buildCameraPosition, buildCameraRotation));
     }
 
-    // [¾Æ´Ï¿À] ´­·¶À»¶§
+    // [ï¿½Æ´Ï¿ï¿½] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public void CancelDelete()
     {
-        // ÆË¾÷¸¸ ´ÝÀ½ (ÆíÁý »óÅÂ À¯Áö)
+        // ï¿½Ë¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(false );
     }
 
 
 
 
-    // °¡±¸ ÆíÁý ÁßÀÎÁö ÆÇº°
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Çºï¿½
     public bool IsAlreadyEditing(Transform clickingObject)
     {
-        // ¹æ±Ý Å¬¸¯ÇÑ ¿ÀºêÁ§Æ®°¡ ¼±ÅÃ µÇ¾îÀÖ´Â ¿ÀºêÁ§Æ®°¡ ¾Æ´Ï¶ó¸é true
+        // ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç¾ï¿½ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Æ´Ï¶ï¿½ï¿½ true
         if (selectedTarget != null && selectedTarget != clickingObject)
         {
             return true;
@@ -602,8 +671,8 @@ public class GameManager : MonoBehaviour
     public void SetBuildMode() => ChangeMode(GameMode.Build);
 
 
-    // °æ°í ÆË¾÷ È£Ãâ ÇÔ¼ö
-    public void ShowWarningPopup(string message = "ÇØ´ç À§Ä¡¿¡´Â °¡±¸¸¦ ³õÀ» ¼ö ¾ø½À´Ï´Ù.")
+    // ï¿½ï¿½ï¿½ ï¿½Ë¾ï¿½ È£ï¿½ï¿½ ï¿½Ô¼ï¿½
+    public void ShowWarningPopup(string message = "ï¿½Ø´ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.")
     {
         if (warningPopupPanel == null) return;
 
@@ -617,7 +686,7 @@ public class GameManager : MonoBehaviour
             StopCoroutine(warningCoroutine);
         }
 
-        warningCoroutine = StartCoroutine(HideWarningPopupRoutine(2.0f)); // 2ÃÊ ÈÄ ÀÚµ¿ ºñÈ°¼ºÈ­
+        warningCoroutine = StartCoroutine(HideWarningPopupRoutine(2.0f)); // 2ï¿½ï¿½ ï¿½ï¿½ ï¿½Úµï¿½ ï¿½ï¿½È°ï¿½ï¿½È­
     }
 
     private IEnumerator HideWarningPopupRoutine(float delay)
@@ -625,6 +694,24 @@ public class GameManager : MonoBehaviour
         warningPopupPanel.SetActive(true);
         yield return new WaitForSeconds(delay);
         warningPopupPanel.SetActive(false);
+    }
+
+
+
+
+    public void ClickRestartButton()
+    {
+        // ï¿½Ë¾ï¿½
+        if (restartConfirmPopUP != null) restartConfirmPopUP.SetActive(true);
+    }
+
+    
+
+    // [ï¿½Æ´Ï¿ï¿½] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    public void CancelRestart()
+    {
+        // ï¿½Ë¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+        if (restartConfirmPopUP != null) restartConfirmPopUP.SetActive(false);
     }
 }
 
