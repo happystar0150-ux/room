@@ -9,28 +9,28 @@ public class ObjectDrag : MonoBehaviour
 
     private bool isDraggingAllowed = false;
 
-    // Å¬¸¯ ½ÃÁ¡ÀÇ °¡±¸ À§Ä¡¿Í ¸¶¿ì½º À§Ä¡ Â÷ÀÌ(¿ÀÇÁ¼Â)
+    // Å¬ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ì½º ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
     private Vector3 offset;
 
-    // µå·¡±× ½ÃÀÛ Àü À§Ä¡¿Í È¸Àü°ª ÀúÀå
+    // ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ È¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     private Vector3 startPosition;
     private Quaternion startRotation;
 
-    // ÇöÀç °ãÄ§ »óÅÂ
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä§ ï¿½ï¿½ï¿½ï¿½
     public bool isOverlapping = false;
 
-    [Header("¹èÄ¡ ¹× ·¹ÀÌ¾î ¼³Á¤")]
-    [Tooltip("°¡±¸¸¦ ¿Ã·Á³õÀ» ¼ö ÀÖ´Â ·¹ÀÌ¾î")]
+    [Header("ï¿½ï¿½Ä¡ ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½")]
     public LayerMask placementLayerMask;
 
-    [Tooltip("°¡±¸ °ãÄ§ °¨Áö ½Ã ¹«½ÃÇÒ ·¹ÀÌ¾î")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä§ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½")]
     public LayerMask ignoreOverlapMask;
 
-    // ¸ÓÆ¼¸®¾ó »ö»ó º¯°æ¿ë(°æ°í¿ë)
+    // ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½)
     private Renderer[] renderers;
     private Dictionary<Renderer, MaterialColors[]> originalColors = new Dictionary<Renderer, MaterialColors[]>();
 
-    // ¸ÓÆ¼¸®¾ó º° ¿øº» »ö»ó°ú ±×¸²ÀÚ »ö»óÀ» ¸ðµÎ ÀúÀåÇÏ±â À§ÇÑ ±¸Á¶Ã¼
+    // ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
     private struct MaterialColors
     {
         public Color baseColor;
@@ -43,7 +43,7 @@ public class ObjectDrag : MonoBehaviour
         CacheRenderers();
     }
 
-    // °¡±¸ ¿ÜÇüÀÌ ¹Ù²ð ¼ö ÀÖÀ¸¹Ç·Î ¸ÓÆ¼¸®¾ó ¹× ¿øº» »ö»ó Ä³½Ì
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù²ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ä³ï¿½ï¿½
     public void CacheRenderers()
     {
         renderers = GetComponentsInChildren<Renderer>();
@@ -53,20 +53,20 @@ public class ObjectDrag : MonoBehaviour
         {
             if(rend == null) continue;
 
-            // ¸ÓÆ¼¸®¾ó °³¼ö¸¸Å­ ±¸Á¶Ã¼ ¹è¿­ »ý¼º
+            // ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å­ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½è¿­ ï¿½ï¿½ï¿½ï¿½
             MaterialColors[] colors = new MaterialColors[rend.materials.Length];
 
             for (int i = 0; i < rend.materials.Length; i++)
             {
                 Material mat = rend.materials[i];
 
-                // 1. ±âº» »ö»ó ÀúÀå
+                // 1. ï¿½âº» ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (mat.HasProperty("_BaseColor"))
                     colors[i].baseColor = mat.GetColor("_BaseColor");
                 else if (mat.HasProperty("_Color"))
                     colors[i].baseColor = mat.color;
 
-                // 2. (À¯´ÏÆ¼Â¯ Å÷½¦ÀÌ´õ¿ë) ±×¸²ÀÚ »ö»ó ÀúÀå
+                // 2. (ï¿½ï¿½ï¿½ï¿½Æ¼Â¯ ï¿½ï¿½ï¿½ï¿½ï¿½Ì´ï¿½ï¿½ï¿½) ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (mat.HasProperty("_1st_ShadeColor"))
                     colors[i].shade1Color = mat.GetColor("_1st_ShadeColor");
                 if (mat.HasProperty("_2nd_ShadeColor"))
@@ -78,13 +78,13 @@ public class ObjectDrag : MonoBehaviour
 
     private void Update()
     {
-        // ÀÌµ¿ ¸ðµå°¡ ¾Æ´Ò ¶§ ÀÛµ¿ÇÏÁö ¾ÊÀ½
+        // ï¿½Ìµï¿½ ï¿½ï¿½å°¡ ï¿½Æ´ï¿½ ï¿½ï¿½ ï¿½Ûµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (!isMoveMode) return;
 
-        // 1. ¸¶¿ì½º Å¬¸¯ ½ÃÀÛ
+        // 1. ï¿½ï¿½ï¿½ì½º Å¬ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (Input.GetMouseButtonDown(0))
         {
-            // Å¬¸¯ À§Ä¡°¡ UI À§¶ó¸é µå·¡±× Â÷´Ü
+            // Å¬ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ UI ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
 
@@ -93,33 +93,33 @@ public class ObjectDrag : MonoBehaviour
 
             }
 
-            // ºó°ø°£ÀÌ³ª °¡±¸¸¦ Á¦´ë·Î ´­·¶´Ù¸é µå·¡±× Çã¿ë
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì³ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ù¸ï¿½ ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½
             isDraggingAllowed = true;
             
-            // µå·¡±× ½ÃÀÛ Àü À§Ä¡/È¸Àü ¹é¾÷
+            // ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡/È¸ï¿½ï¿½ ï¿½ï¿½ï¿½
             startPosition = transform.position;
             startRotation = transform.rotation;
 
-            // ¿ÜÇü º¯°æ °¡´É¼ºÀ» ´ëºñÇØ ·»´õ·¯ ÀçÄ³½Ì
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä³ï¿½ï¿½
             CacheRenderers();
 
-            // ÇöÀç °¡±¸°¡ À§Ä¡ÇÑ Y ³ôÀÌ¸¦ ±âÁØÀ¸·Î Æò¸éÀ» ¸¸µé¾î ½ÃÀÛ ¿ÀÇÁ¼Â °è»ê
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ Y ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
             Plane currentPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
             Vector3 mouseWorldPos = GetMouseWorldPositionOnPlane(currentPlane);
 
-            // X, Z ÃàÀÇ »ó´ëÀû °Å¸®Â÷¸¸ ¿ÀÇÁ¼ÂÀ¸·Î ÀúÀå
+            // X, Z ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             offset = transform.position - mouseWorldPos;
             offset.y = 0;
         }
 
-        // 2. µå·¡±× Áß
+        // 2. ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½
         if (Input.GetMouseButton(0) && isDraggingAllowed)
         {
             
 
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            // RaycastAll·Î ·¹ÀÌÀú »óÀÇ ¸ðµç ¹°Ã¼ °¨Áö
+            // RaycastAllï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
             RaycastHit[] hits = Physics.RaycastAll(ray, 500f, placementLayerMask);
             System.Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance));
 
@@ -129,16 +129,16 @@ public class ObjectDrag : MonoBehaviour
             
             foreach (var hit in hits)
             {
-                // ÀÚ±â ÀÚ½Å ¹× ÀÚ½Ä ÄÝ¶óÀÌ´õ¿¡ ¸ÂÀº °ÍÀº ¹«½Ã
+                // ï¿½Ú±ï¿½ ï¿½Ú½ï¿½ ï¿½ï¿½ ï¿½Ú½ï¿½ ï¿½Ý¶ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (hit.transform.IsChildOf(this.transform)) continue;
 
                 targetPos = hit.point + offset;
-                targetPos.y = hit.point.y; // ºÎµúÈù Ç¥¸é ³ôÀÌ·Î ¼¼ÆÃ
+                targetPos.y = hit.point.y; // ï¿½Îµï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½Ì·ï¿½ ï¿½ï¿½ï¿½ï¿½
                 foundValidSurface = true;
                 break;
             }
 
-            // ¹Ù´Ú/Ç¥¸é ¹üÀ§¸¦ ¹þ¾î³­ °æ¿ì ÇöÀç Æò¸é ³ôÀÌ À¯Áö
+            // ï¿½Ù´ï¿½/Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½î³­ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             if (!foundValidSurface)
             {
                 Plane currentPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
@@ -149,31 +149,31 @@ public class ObjectDrag : MonoBehaviour
 
             transform.position = targetPos;
 
-            // ½Ç½Ã°£ °ãÄ§ °¨Áö ¹× »¡°£»ö ¿¬Ãâ
+            // ï¿½Ç½Ã°ï¿½ ï¿½ï¿½Ä§ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             CheckOverlapAndApplyVisuals();
           
         }
 
-        // 3. ¸¶¿ì½º Å¬¸¯ ¶ÃÀ» ¶§
+        // 3. ï¿½ï¿½ï¿½ì½º Å¬ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
         if (Input.GetMouseButtonUp(0))
         {
             if(isDraggingAllowed)
             {
                 if (isOverlapping)
                 {
-                    // °ãÄ£ »óÅÂ¶ó¸é µå·¡±× ½ÃÀÛ Àü À§Ä¡·Î º¹±Í
+                    // ï¿½ï¿½Ä£ ï¿½ï¿½ï¿½Â¶ï¿½ï¿½ ï¿½å·¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                     transform.position = startPosition;
                     transform.rotation = startRotation;
 
-                    // °æ°í ÆË¾÷ ¶ç¿ì±â
+                    // ï¿½ï¿½ï¿½ ï¿½Ë¾ï¿½ ï¿½ï¿½ï¿½ï¿½
                     if (GameManager.Instance != null)
                     {
-                        GameManager.Instance.ShowWarningPopup("´Ù¸¥ °¡±¸¿Í °ãÄ¡´Â À§Ä¡¿¡´Â ³õÀ» ¼ö ¾ø½À´Ï´Ù!");
+                        GameManager.Instance.ShowWarningPopup("ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½!");
                     }
                 }
                 else
                 {
-                    // ¹èÄ¡ ¼º°ø ½Ã ÇöÀç À§Ä¡¸¦ »õ·Î¿î ½ÃÀÛ À§Ä¡·Î ÀúÀå
+                    // ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                     startPosition = transform.position;
                     startRotation = transform.rotation;
 
@@ -183,19 +183,19 @@ public class ObjectDrag : MonoBehaviour
                     }
                 }
 
-                // ¸ÓÆ¼¸®¾ó »ö»ó ¿ø·¡´ë·Î º¹±¸
+                // ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 ResetVisuals();
 
                 
                 
             }
 
-            // º¯¼ö ÃÊ±âÈ­
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­
             isDraggingAllowed = false ;
         }
     }
 
-    // OverlapBox¸¦ È°¿ëÇÑ ½Ç½Ã°£ °¡±¸ °ãÄ§ °¨Áö
+    // OverlapBoxï¿½ï¿½ È°ï¿½ï¿½ï¿½ï¿½ ï¿½Ç½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä§ ï¿½ï¿½ï¿½ï¿½
     private void CheckOverlapAndApplyVisuals()
     {
         Collider[] myCols = GetComponentsInChildren<Collider>();
@@ -220,19 +220,19 @@ public class ObjectDrag : MonoBehaviour
 
             foreach (var other in overlaps)
             {
-                // ÀÚ±â ÀÚ½Å ¹× ÀÚ½Ä ÄÝ¶óÀÌ´õ ¹«½Ã
+                // ï¿½Ú±ï¿½ ï¿½Ú½ï¿½ ï¿½ï¿½ ï¿½Ú½ï¿½ ï¿½Ý¶ï¿½ï¿½Ì´ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (other.transform.IsChildOf(this.transform)) continue;
 
-                // [µð¹ö±× ÆÁ] ¸¸¾à ¿©ÀüÈ÷ °ãÄ§ ÆÇÁ¤ÀÌ ³­´Ù¸é ¾Æ·¡ ÁÖ¼®À» Ç®°í ·Î±×¸¦ È®ÀÎ
-                // Debug.Log($"°ãÄ£ ¿ÀºêÁ§Æ®: {other.gameObject.name} (·¹ÀÌ¾î: {LayerMask.LayerToName(other.gameObject.layer)})");
+                // [ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä§ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ù¸ï¿½ ï¿½Æ·ï¿½ ï¿½Ö¼ï¿½ï¿½ï¿½ Ç®ï¿½ï¿½ ï¿½Î±×¸ï¿½ È®ï¿½ï¿½
+                // Debug.Log($"ï¿½ï¿½Ä£ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®: {other.gameObject.name} (ï¿½ï¿½ï¿½Ì¾ï¿½: {LayerMask.LayerToName(other.gameObject.layer)})");
 
-                // ¹Ù´Ú/Ç¥¸é ·¹ÀÌ¾î ¹«½Ã
+                // ï¿½Ù´ï¿½/Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (((1 << other.gameObject.layer) & placementLayerMask) != 0) continue;
 
-                // ignoreOverlapMask¿¡ ÇØ´çµÇ´Â ·¹ÀÌ¾î ¹«½Ã
+                // ignoreOverlapMaskï¿½ï¿½ ï¿½Ø´ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (((1 << other.gameObject.layer) & ignoreOverlapMask) != 0) continue;
 
-                // ´Ù¸¥ °¡±¸³ª º®°ú °ãÄ§ È®ÀÎ
+                // ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä§ È®ï¿½ï¿½
                 isOverlapping = true;
                 break;
             }
@@ -240,7 +240,7 @@ public class ObjectDrag : MonoBehaviour
             if (isOverlapping) break;
         }
 
-        // °ãÄ¡¸é »¡°£»ö, ¾È °ãÄ¡¸é ¿øº» »ö»ó Àû¿ë
+        // ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         SetVisualColor(isOverlapping ? new Color(1f, 0f, 0f, 0.5f) : Color.clear);
     }
 
@@ -252,37 +252,37 @@ public class ObjectDrag : MonoBehaviour
             for (int i = 0; i < rend.materials.Length; i++)
             {
                 Material mat = rend.materials[i];
-                // URP¶û Standard ¼ÎÀÌ´õ ¸ðµÎ Áö¿ø
+                // URPï¿½ï¿½ Standard ï¿½ï¿½ï¿½Ì´ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 bool hasBaseColor = rend.materials[i].HasProperty("_BaseColor");
                 bool hasColor = rend.materials[i].HasProperty("_Color");
 
                 if (hasBaseColor || hasColor)
                 {
-                    if (tintColor == Color.clear) // ¿ø»óº¹±¸
+                    if (tintColor == Color.clear) // ï¿½ï¿½ï¿½óº¹±ï¿½
                     {
                         
                         if (originalColors.ContainsKey(rend) && originalColors[rend].Length > i)
                         {
                             MaterialColors orig = originalColors[rend][i];
 
-                            // ±âº» »ö»ó º¹±¸
+                            // ï¿½âº» ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                             if (hasBaseColor) mat.SetColor("_BaseColor", orig.baseColor);
                             else if (hasColor) mat.color = orig.baseColor;
 
-                            // ±×¸²ÀÚ »ö»ó º¹±¸
+                            // ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                             if (mat.HasProperty("_1st_ShadeColor"))
                                 mat.SetColor("_1st_ShadeColor", orig.shade1Color);
                             if (mat.HasProperty("_2nd_ShadeColor"))
                                 mat.SetColor("_2nd_ShadeColor", orig.shade2Color);
                         }
                     }
-                    else // »¡°£»ö Àû¿ë
+                    else // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                     {
                         if (hasBaseColor)
                         {
                             mat.SetColor("_BaseColor", tintColor);
 
-                            // Å÷ ½¦ÀÌ´õ ±×¸²ÀÚ ¿µ¿ªµµ °°ÀÌ »¡°²°Ô µ¤¾î¾º¿ì±â
+                            // ï¿½ï¿½ ï¿½ï¿½ï¿½Ì´ï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½î¾ºï¿½ï¿½ï¿½
                             if (rend.materials[i].HasProperty("_1st_ShadeColor"))
                                 rend.materials[i].SetColor("_1st_ShadeColor", tintColor);
                             if (rend.materials[i].HasProperty("_2nd_ShadeColor"))
@@ -307,7 +307,7 @@ public class ObjectDrag : MonoBehaviour
         isOverlapping = false;
     }
 
-    // ÁöÁ¤ÇÑ Y ³ôÀÌÀÇ Æò¸é°ú ·¹ÀÌÀú°¡ ¸¸³ª´Â ÁöÁ¡ ±¸ÇÏ±â
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Y ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï±ï¿½
     private Vector3 GetMouseWorldPositionOnPlane(Plane plane)
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
