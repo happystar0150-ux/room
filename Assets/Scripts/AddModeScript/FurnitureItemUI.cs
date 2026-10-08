@@ -11,41 +11,116 @@ public class FurnitureItemUI : MonoBehaviour
     public TextMeshProUGUI nameText;
 
     private FurnitureData containedData;
+    private Button itemButton;
 
-    // ¹öÆ°¿¡ °¡±¸ µ¥ÀÌÅÍ(ÀÌ¸§, ÀÌ¹ÌÁö)¸¦ ÁÖÀÔÇÏ´Â ÇÔ¼ö
+    // =========================================================
+    // ì´ˆê¸°í™”
+    // =========================================================
+
+    private void Awake()
+    {
+        // ë¨¼ì € ìê¸° ìì‹ ì—ì„œ ì°¾ìŒ
+        itemButton =
+            GetComponent<Button>();
+
+        // ìê¸° ìì‹ ì— ì—†ë‹¤ë©´ ìì‹ì—ì„œ ì°¾ìŒ
+        if (itemButton == null)
+        {
+            itemButton =
+                GetComponentInChildren<Button>();
+        }
+
+        if (itemButton != null)
+        {
+            itemButton.onClick.AddListener(
+                OnClickItem
+            );
+        }
+        else
+        {
+            Debug.LogError(
+                $"[{gameObject.name}] FurnitureItemUIì— Buttonì„ ì°¾ì§€ ëª»í–ˆìŠµë‹ˆë‹¤."
+            );
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (itemButton != null)
+        {
+            itemButton.onClick.RemoveListener(
+                OnClickItem
+            );
+        }
+    }
+
+    // =========================================================
+    // ë°ì´í„° ì„¤ì •
+    // =========================================================
+
     public void Setup(FurnitureData data)
     {
         containedData = data;
 
-        // ÀÌ¸§ ui ¿¬°á
+        if (data == null)
+        {
+            if (itemButton != null)
+                itemButton.interactable = false;
+
+            return;
+        }
+
+        // ì´ë¦„
         if (nameText != null)
         {
-            nameText.text = data.furnitureName;
+            nameText.text =
+                data.furnitureName;
         }
-        
-        // ¾ÆÀÌÄÜ ÀÌ¹ÌÁö ui ¿¬µ¿
-        if (iconImage != null && data.furnitureIcon != null )
+
+        // ì•„ì´ì½˜
+        if (iconImage != null)
         {
-            iconImage.sprite = data.furnitureIcon;
+            if (data.furnitureIcon != null)
+            {
+                iconImage.sprite =
+                    data.furnitureIcon;
+            }
+        }
+
+        // ë°ì´í„°ê°€ ì •ìƒì ìœ¼ë¡œ ë“¤ì–´ì˜¤ë©´
+        // ë²„íŠ¼ì„ ë‹¤ì‹œ í™œì„±í™”
+        if (itemButton != null)
+        {
+            itemButton.interactable = true;
         }
     }
 
-    private void Awake()
-    {
-        // ¹öÆ° ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿Í Å¬¸¯ ÀÌº¥Æ®¸¦ ¿¬°á
-        Button btn = GetComponent<Button>();
-        if ( btn != null )
-        {
-            btn.onClick.AddListener(OnClickItem);
-        }
-    }
+    // =========================================================
+    // ë²„íŠ¼ í´ë¦­
+    // =========================================================
 
     private void OnClickItem()
     {
-        // ¹öÆ°ÀÌ ´­¸®¸é GameManager¿¡°Ô °¡±¸ µ¥ÀÌÅÍ ÀüÈ¯ ¿äÃ»
-        if (GameManager.Instance != null && containedData != null)
+        if (containedData == null)
         {
-            GameManager.Instance.SwitchFurnitureData(containedData);
+            Debug.LogWarning(
+                $"[{gameObject.name}] FurnitureDataê°€ ì„¤ì •ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤."
+            );
+
+            return;
         }
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning(
+                "GameManager.Instanceê°€ ì—†ìŠµë‹ˆë‹¤."
+            );
+
+            return;
+        }
+
+        GameManager.Instance.SwitchFurnitureData(
+            containedData
+        );
     }
 }

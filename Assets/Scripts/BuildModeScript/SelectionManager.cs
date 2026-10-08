@@ -1,117 +1,208 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class SelectionManager : MonoBehaviour
 {
     private List<Material> targetMaterials = new List<Material>();
-    private int originalLayer;
+
+    // ê° ì˜¤ë¸Œì íŠ¸ì˜ ì›ë˜ Layerë¥¼ ì €ì¥
+    private Dictionary<GameObject, int> originalLayers =
+        new Dictionary<GameObject, int>();
+
     private const int SELECTED_STENCIL_VALUE = 15;
     private const int DEFAULT_STENCIL_VALUE = 0;
 
-    void Awake()
+    private int selectedLayer;
+
+    private void Awake()
     {
-        
-        
-        //±âº» ·¹ÀÌ¾î ±â¾ï
-        originalLayer = gameObject.layer;
+        selectedLayer = LayerMask.NameToLayer("Selected");
     }
+
+    // =========================================================
+    // Material ìºì‹œ
+    // =========================================================
 
     public void RefreshMaterials()
     {
         targetMaterials.Clear();
 
-        Renderer[] renderer = GetComponentsInChildren<Renderer>();
-        
-        foreach (Renderer rend in renderer)
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+
+        foreach (Renderer rend in renderers)
         {
-            if (rend != null)
+            if (rend == null)
             {
-                // ÀÚ½Ä °¡±¸µéÀÌ °¡Áø ¸ÓÆ¼¸®¾óÀ» ¸®½ºÆ®¿¡ ´ã¾Æ¿ä
-                targetMaterials.AddRange(rend.materials);
+                continue;
             }
+
+            targetMaterials.AddRange(rend.materials);
         }
     }
+
+    // =========================================================
+    // í´ë¦­í•´ì„œ ì„ íƒ
+    // =========================================================
 
     public void OnSelectedByClick()
     {
-        // ÇöÀç ¸¶¿ì½º Ä¿¼­°¡ UI À§¿¡ ÀÖ´Ù¸é 3D Å¬¸¯À» ¹«½Ã
-        if (EventSystem.current.IsPointerOverGameObject())
+        // UI ìœ„ë¥¼ í´ë¦­í–ˆë‹¤ë©´ ë¬´ì‹œ
+        if (EventSystem.current != null &&
+            EventSystem.current.IsPointerOverGameObject())
+        {
             return;
+        }
 
-        // °ÇÃà ¸ğµåÀÏ ¶§¸¸ ÀÛµ¿
-        if (GameManager.Instance == null || GameManager.Instance.currentMode != GameMode.Build)
+        // Build ëª¨ë“œì—ì„œë§Œ ì„ íƒ
+        if (GameManager.Instance == null ||
+            GameManager.Instance.currentMode != GameMode.Build)
+        {
             return;
+        }
 
-        // ÀÌ¹Ì ¼±ÅÃ ÁßÀÌ¶ó¸é »õ·Î¿î Å¬¸¯ Â÷´Ü
-        if (GameManager.Instance.IsAlreadyEditing(this.transform))
+        // ë‹¤ë¥¸ ê°€êµ¬ë¥¼ ì´ë¯¸ í¸ì§‘ ì¤‘ì´ë©´ ë¬´ì‹œ
+        if (GameManager.Instance.IsAlreadyEditing(transform))
+        {
             return;
+        }
 
-        // ÀÌµ¿ ¸ğµåÀÏ ¶§´Â ÃÖÃÊ ¼±ÅÃ ·ÎÁ÷ Å¸Áö ¾Ê°í µå·¡°í Çã¿ë
+        // ì´ë™ ëª¨ë“œ ì¤‘ì´ë©´ ë¬´ì‹œ
         ObjectDrag dragScript = GetComponent<ObjectDrag>();
+
         if (dragScript != null && dragScript.isMoveMode)
+        {
             return;
+        }
 
-        // ÀÌ¹Ì ¼±ÅÃµÈ ¿ÀºêÁ§Æ® Áßº¹ Ã³¸® ¹æÁö
-        if (gameObject.layer == LayerMask.NameToLayer("Selected"))
-            return;
+        // ì„ íƒ ì ìš©
+        ApplySelection();
 
-        // Å¬¸¯ µÇ¾úÀ¸¹Ç·Î ¸ÓÆ¼¸®¾ó ¸®½ºÆ®¸¦ ÃÖ½Å °¡±¸ ¿ÜÇü ±âÁØÀ¸·Î °»½Å
-        RefreshMaterials();
-
-
-        // Ã³À½ ¼±ÅÃ½Ã ÀÛµ¿
-        // ·¹ÀÌ¾î º¯°æ
-        SetLayerRecursively(this.gameObject, LayerMask.NameToLayer("Selected"));
-        // ¿Ü°û¶óÀÎ »ı¼º
-        SetStencilValue(SELECTED_STENCIL_VALUE);
-
-        // GameManager¿¡ ¼±ÅÃ ¾Ë¸²
-        GameManager.Instance.SelectionObject(this.transform);
-
-
+        // GameManagerì— ì„ íƒ ì•Œë¦¼
+        GameManager.Instance.SelectionObject(transform);
     }
 
-    public void SetStencilValue(int value)
-    {
-        // ¸ÓÆ¼¸®¾óÀÌ ºñ¾îÀÖ´Ù¸é ÇÑ ¹ø °»½Å
-        if (targetMaterials.Count == 0)
-            RefreshMaterials();
+    // =========================================================
+    // ì„ íƒ ì ìš©
+    // =========================================================
 
-        foreach (var mat in targetMaterials)
+    public void ApplySelection()
+    {
+        // ì„ íƒí•˜ê¸° ì „ì— ì›ë˜ Layer ì €ì¥
+        if (originalLayers.Count == 0)
         {
-            if (mat != null)
+            SaveOriginalLayers(gameObject);
+        }
+
+        // Material ë‹¤ì‹œ ìºì‹œ
+        RefreshMaterials();
+
+        // Selected Layer ì ìš©
+        SetLayerRecursively(gameObject, selectedLayer);
+
+        // Stencil ì ìš©
+        SetStencilValue(SELECTED_STENCIL_VALUE);
+    }
+
+    // =========================================================
+    // ì›ë˜ Layer ì €ì¥
+    // =========================================================
+
+    private void SaveOriginalLayers(GameObject obj)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        if (!originalLayers.ContainsKey(obj))
+        {
+            originalLayers.Add(obj, obj.layer);
+        }
+
+        foreach (Transform child in obj.transform)
+        {
+            if (child == null)
             {
-                // ½¦ÀÌ´õ¿¡¼­ ¼³Á¤ÇÑ ½ºÅÙ½Ç º¯¼ö ÀÌ¸§ (_StencilRef)À» È®ÀÎÇÏ¼¼¿ä.
-                mat.SetInt("_StencilNo", value);
+                continue;
             }
+
+            SaveOriginalLayers(child.gameObject);
         }
     }
 
-    public void ResetSelection()
+    // =========================================================
+    // Stencil
+    // =========================================================
+
+    public void SetStencilValue(int value)
     {
-        //¼±ÅÃ ÇØÁ¦ ½Ã ¿ø·¡ ·¹ÀÌ¾î·Î º¹±¸
-        SetLayerRecursively(this.gameObject, originalLayer);
-        SetStencilValue(DEFAULT_STENCIL_VALUE);
+        if (targetMaterials.Count == 0)
+        {
+            RefreshMaterials();
+        }
+
+        foreach (Material mat in targetMaterials)
+        {
+            if (mat == null)
+            {
+                continue;
+            }
+
+            mat.SetInt("_StencilNo", value);
+        }
     }
 
-    // ¿ÀºêÁ§Æ®ÀÇ ÇÏÀ§ ÀÚ½Äµé±îÁö ·¹ÀÌ¾î¸¦ ½Ï ¹Ù²ãÁÖ´Â ÇÔ¼ö
+    // =========================================================
+    // ì„ íƒ í•´ì œ
+    // =========================================================
+
+    public void ResetSelection()
+    {
+        // ê° ì˜¤ë¸Œì íŠ¸ë¥¼ ì›ë˜ Layerë¡œ ë³µêµ¬
+        foreach (KeyValuePair<GameObject, int> pair in originalLayers)
+        {
+            if (pair.Key == null)
+            {
+                continue;
+            }
+
+            pair.Key.layer = pair.Value;
+        }
+
+        // Stencil ì´ˆê¸°í™”
+        SetStencilValue(DEFAULT_STENCIL_VALUE);
+
+        // ì €ì¥ëœ Layer ì •ë³´ ì´ˆê¸°í™”
+        originalLayers.Clear();
+    }
+
+    // =========================================================
+    // Layer ë³€ê²½
+    // =========================================================
+
     private void SetLayerRecursively(GameObject obj, int newLayer)
     {
-        if (obj == null) return;
+        if (obj == null)
+        {
+            return;
+        }
 
-        // FurnitureSurface ·¹ÀÌ¾î´Â º¯°æÇÏÁö ¾Ê°í º¸È£
         int surfaceLayer = LayerMask.NameToLayer("FurnitureSurface");
+
+        // FurnitureSurfaceëŠ” ê±´ë“œë¦¬ì§€ ì•ŠìŒ
         if (obj.layer != surfaceLayer)
         {
             obj.layer = newLayer;
         }
-        
+
         foreach (Transform child in obj.transform)
         {
-            if (child == null) continue;
+            if (child == null)
+            {
+                continue;
+            }
+
             SetLayerRecursively(child.gameObject, newLayer);
         }
     }

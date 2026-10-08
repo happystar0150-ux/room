@@ -4,30 +4,57 @@ using UnityEngine;
 
 public class FurnitureSetup : MonoBehaviour
 {
-    // ÇöÀç »ı¼ºµÇ¾î ÀÖ´Â °¡±¸ ¿ÜÇüÀ» ±â¾ïÇÒ º¯¼ö
+    // í˜„ì¬ ì‹¤ì œë¡œ í‘œì‹œë˜ê³  ìˆëŠ” ê°€êµ¬ í”„ë¦¬íŒ¹
     private GameObject currentVisualPrefab;
+
+    // í˜„ì¬ ì‚¬ìš© ì¤‘ì¸ FurnitureData
+    private FurnitureData currentData;
+
+    public FurnitureData CurrentData
+    {
+        get { return currentData; }
+    }
 
     public void SetupFurniture(FurnitureData data)
     {
-        if (data == null || data.furniturePrefab == null) return;
+        if (data == null || data.furniturePrefab == null)
+            return;
 
-        // ±âÁ¸ °¡±¸ ¿ÜÇü »èÁ¦
-        foreach (Transform child in transform)
+        // -------------------------------------------------
+        // ê¸°ì¡´ ê°€êµ¬ ì œê±°
+        // -------------------------------------------------
+
+        if (currentVisualPrefab != null)
         {
-            Destroy(child.gameObject);
+            // ìƒˆ ê°€êµ¬ë¥¼ ë§Œë“œëŠ” ìˆœê°„ ê¸°ì¡´ ê°€êµ¬ì˜ Colliderê°€
+            // ë°°ì¹˜ íŒì •ì— ì˜í–¥ì„ ì£¼ì§€ ì•Šë„ë¡ ë¹„í™œì„±í™”
+            currentVisualPrefab.SetActive(false);
+
+            Destroy(currentVisualPrefab);
+            currentVisualPrefab = null;
         }
 
-        // »õ·Î¿î °¡±¸ ÇÁ¸®ÆÕÀ» ÀÚ½ÄÀ¸·Î »ı¼º
-        GameObject spawnedPrefab = Instantiate(data.furniturePrefab, transform.position, transform.rotation);
-        spawnedPrefab.transform.SetParent(transform);
+        // -------------------------------------------------
+        // ìƒˆ ê°€êµ¬ ìƒì„±
+        // -------------------------------------------------
 
-        /*
-        // »õ·Î¿î ÇÁ¸®ÆÕÀ» »À´ë¿Í °°Àº À§Ä¡ / È¸Àü°ª À¸·Î »ı¼º
-        currentVisualPrefab = Instantiate(data.furniturePrefab, transform.position, transform.rotation);
+        currentVisualPrefab = Instantiate(
+            data.furniturePrefab,
+            transform.position,
+            transform.rotation
+        );
 
-        // »ı¼ºÇÑ ÇÁ¸®ÆÕÀ» ÀÚ½ÄÀ¸·Î ³Ö¾îÁí
+        // FurnitureSetupì˜ ìì‹ìœ¼ë¡œ ì„¤ì •
         currentVisualPrefab.transform.SetParent(transform);
-        */
 
+        // ë¶€ëª¨ì˜ ìœ„ì¹˜/íšŒì „ì— ì •í™•í•˜ê²Œ ë§ì¶¤
+        currentVisualPrefab.transform.localPosition =
+            Vector3.zero;
+
+        currentVisualPrefab.transform.localRotation =
+            Quaternion.identity;
+
+        // í˜„ì¬ ë°ì´í„° ì €ì¥
+        currentData = data;
     }
 }

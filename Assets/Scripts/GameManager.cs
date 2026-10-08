@@ -1,24 +1,33 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-//using System.Timers;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-[System.Serializable]
 public class CategoryButtonData
 {
-    public string categoryName;         // ī�װ����
-    public Image buttonImage;           // ��ư image ������Ʈ
-    public Sprite normalSprite;         // �⺻ �̹���
-    public Sprite selectedSprite;       // ���õǾ��� �� �̹���   
+    public string categoryName;
+    public Image buttonImage;
+    public Sprite normalSprite;
+    public Sprite selectedSprite;
 }
+
 public class GameManager : MonoBehaviour
 {
-    // ���� ���� ���
-    public GameMode currentMode = GameMode.Normal;
+    // =========================================================
+    // 현재 모드
+    // =========================================================
 
-    
+    public GameMode currentMode =
+        GameMode.Normal;
+
+    // =========================================================
+    // UI Panels
+    // =========================================================
+
     [Header("UI Panels")]
+
     public GameObject normalUIPanel;
     public GameObject buildUIPanel;
     public GameObject editUIPanel;
@@ -27,270 +36,784 @@ public class GameManager : MonoBehaviour
     public GameObject deleteConfirmPopUP;
     public GameObject restartConfirmPopUP;
 
-    
+    // =========================================================
+    // Furniture Spawn System
+    // =========================================================
 
     [Header("Furniture Spawn System")]
+
     public GameObject commonFurniturePrefab;
 
-   
+    // 현재 미리보기 가구
+    [Header("현재 가구")]
+
+    public GameObject currentSpawnedObject;
+
+    // 현재 선택된 FurnitureData
+    private FurnitureData currentFurnitureData;
+
+    // =========================================================
+    // Camera
+    // =========================================================
 
     [Header("Camera Reference")]
-    public Transform cameraTransform; // ���� ī�޶� Transform
-    public Vector3 cameraOffset = new Vector3(0, 5, -5); // ������Ʈ�� �ٶ� ī�޶��� ����� ��ġ��
 
-    // ���� ���� ���� ������Ʈ transform ���
+    public Transform cameraTransform;
+
+    public Vector3 cameraOffset =
+        new Vector3(0f, 5f, -5f);
+
+    // 현재 선택된 실제 가구
     private Transform selectedTarget;
 
-    // ��庰 ī�޶� ����
-    // normal
+    // 카메라 위치
     private Vector3 normalCameraPosition;
     private Quaternion normalCameraRotation;
-    // build
+
     private Vector3 buildCameraPosition;
     private Quaternion buildCameraRotation;
 
     private Coroutine cameraMoveCoroutine;
 
-    // ������Ʈ ������ �������� ���� ������Ʈ�� ���
-    private GameObject currentActiveFurniture;
+    // =========================================================
+    // Singleton
+    // =========================================================
 
+    public static GameManager Instance
+    {
+        get;
+        private set;
+    }
 
+    // =========================================================
+    // Furniture Data
+    // =========================================================
 
-    public static GameManager Instance { get; private set; }
+    [Header("가구 데이터")]
 
-    [Header("���� ���")]
-    // ������Ʈ â�� ��� ���� �����͸� �־�� ����Ʈ
-    public List<FurnitureData> allFurnitureDataList = new List<FurnitureData>();
-    // ���� ������ ��ư ��ǰ
+    public List<FurnitureData> allFurnitureDataList =
+        new List<FurnitureData>();
+
     public GameObject furnitureItemPrefab;
-    // FurnitureContent �θ� ������Ʈ
+
     public Transform furnitureContentParent;
 
-    [Header("���� ��ġ / ���� ��� ���� ���� ������Ʈ")]
-    public GameObject currentSpawnedObject;
+    // =========================================================
+    // Warning Popup
+    // =========================================================
 
+    [Header("UI 팝업")]
 
-    [Header("UI �˾�")]
-    public GameObject warningPopupPanel; // ��� �˾� ui ������Ʈ
-    public TMPro.TMP_Text warningText; // (���û���) ��� ���� �ؽ�Ʈ
+    public GameObject warningPopupPanel;
+
+    public TMPro.TMP_Text warningText;
 
     private Coroutine warningCoroutine;
 
+    // =========================================================
+    // Category Button
+    // =========================================================
 
+    [Header("카테고리 버튼")]
 
-    [Header("ī�װ�� �� ��ư ����")]
-    // �� ����Ʈ�� a, b, c, d, e ī�װ�� ��ư���� ����ϴ�.
-    public List<CategoryButtonData> categoryButtonList = new List<CategoryButtonData>();
+    public List<CategoryButtonData> categoryButtonList =
+        new List<CategoryButtonData>();
 
+    // =========================================================
+    // 자동 배치
+    // =========================================================
 
-    
+    [Header("자동 가구 배치")]
+
+    [SerializeField]
+    private BoxCollider placementSearchArea;
+
+    [Tooltip("자동 위치 탐색 간격")]
+    [SerializeField]
+    private float autoSearchStep = 0.5f;
+
+    [Tooltip("표면을 찾기 위해 위에서 쏘는 Ray 높이")]
+    [SerializeField]
+    private float surfaceRayHeight = 20f;
+
+    [Tooltip("이 값 이상이면 충분히 평평한 윗면으로 인정")]
+    [SerializeField]
+    private float minSurfaceNormalY = 0.7f;
+
+    // =========================================================
+    // Awake
+    // =========================================================
+
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
-    
+    // =========================================================
+    // Update
+    // =========================================================
+
     private void Update()
     {
-        
-        // build ����϶� ���� Ŭ�� �缱�� ����
-        if (currentMode == GameMode.Build)
+        // Build 모드가 아니면 선택 처리 안 함
+        if (currentMode != GameMode.Build)
+            return;
+
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        // UI 클릭은 무시
+        if (EventSystem.current != null &&
+            EventSystem.current.IsPointerOverGameObject())
         {
-            if (Input.GetMouseButtonDown(0))
-            {
-                // ui Ŭ�� ���̸� ����
-                if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-                    return;
-
-                HandleFurnitureSelectionClick();
-            }
+            return;
         }
-        
 
-        // �׽�Ʈ
-        if (Input.GetMouseButtonDown(0))
-        {
-            Debug.Log($"���콺 Ŭ����! ���� ���� ���: {currentMode}");
-
-            if (UnityEngine.EventSystems.EventSystem.current != null &&
-                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                Debug.LogWarning("���� ���콺 ��ġ �Ʒ� UI ��Ұ� �־� Ŭ���� ���ܵǾ����ϴ�!");
-                return;
-            }
-
-            if (currentMode != GameMode.Build)
-            {
-                Debug.Log($"���� ��尡 Build�� �ƴ϶� '{currentMode}'�� ����ĳ��Ʈ�� ���� �ʾҽ��ϴ�.");
-                return;
-            }
-
-            Debug.Log("��� ������ �����Ͽ� �������� �߻��մϴ�.");
-            HandleFurnitureSelectionClick();
-        }
+        // 가구 선택
+        HandleFurnitureSelectionClick();
     }
 
-    // ���콺 �������� ������ �����ؼ� �����ϴ� �Լ�
+    // =========================================================
+    // 가구 선택 클릭
+    // =========================================================
+
     private void HandleFurnitureSelectionClick()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
+        if (Camera.main == null)
+            return;
 
-        Debug.Log("������ �߻�");
+        Ray ray =
+            Camera.main.ScreenPointToRay(
+                Input.mousePosition
+            );
 
-        if (Physics.Raycast(ray, out hit, 500f))
+        RaycastHit[] hits =
+            Physics.RaycastAll(
+                ray,
+                500f
+            );
+
+        // 카메라에서 가까운 순서로 정렬
+        System.Array.Sort(
+            hits,
+            (a, b) =>
+                a.distance.CompareTo(b.distance)
+        );
+
+        foreach (RaycastHit hit in hits)
         {
-            Debug.Log($"�������� �ε��� ������Ʈ: {hit.transform.name}");
+            if (hit.transform == null)
+                continue;
 
-            // �ε��� �ڽ� �ݶ��̴��� �θ𿡼� SelectionManager�� ã���ϴ�
-            SelectionManager selManager = hit.transform.GetComponentInParent<SelectionManager>();
+            Debug.Log(
+                $"클릭 Ray가 맞은 오브젝트: {hit.transform.name}"
+            );
 
-            if (selManager != null)
-            {
-                Debug.Log($"[���� ���� ����] {selManager.gameObject.name} ������ �����մϴ�.");
-                selManager.OnSelectedByClick();
-            }
-            else
-            {
-                Debug.LogWarning($"{hit.transform.name}�� �θ𿡼� SelectionManager�� ã�� ���߽��ϴ�.");
-            }
+            SelectionManager selManager =
+                hit.transform.GetComponentInParent<SelectionManager>();
+
+            if (selManager == null)
+                continue;
+
+            Debug.Log(
+                $"가구 선택 성공: {selManager.gameObject.name}"
+            );
+
+            selManager.OnSelectedByClick();
+
+            return;
         }
+
+        Debug.Log(
+            "Raycast에 SelectionManager가 있는 가구가 없습니다."
+        );
     }
 
-    void Start()
+    // =========================================================
+    // Start
+    // =========================================================
+
+    private void Start()
     {
-        
+        if (cameraTransform != null)
+        {
+            normalCameraPosition =
+                cameraTransform.position;
 
-        // ī�޶� ����
-        // normal
-        normalCameraPosition = cameraTransform.position;
-        normalCameraRotation = cameraTransform.rotation;
-        // build
-        buildCameraPosition = cameraTransform.position;
-        buildCameraRotation = cameraTransform.rotation;
+            normalCameraRotation =
+                cameraTransform.rotation;
 
+            buildCameraPosition =
+                cameraTransform.position;
 
-        // ���� ���� �� �⺻ ���� ����
+            buildCameraRotation =
+                cameraTransform.rotation;
+        }
+
         ChangeMode(GameMode.Normal);
 
-        if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(false);
-        if (moveUIPanel != null) moveUIPanel.SetActive(false);
-        if (restartConfirmPopUP != null) restartConfirmPopUP.SetActive(false);
+        if (deleteConfirmPopUP != null)
+            deleteConfirmPopUP.SetActive(false);
 
-        
+        if (moveUIPanel != null)
+            moveUIPanel.SetActive(false);
 
+        if (restartConfirmPopUP != null)
+            restartConfirmPopUP.SetActive(false);
     }
 
-    // ��� ���� �Լ� (UI��ư�� ����)
+    // =========================================================
+    // 모드 변경
+    // =========================================================
+
     public void ChangeMode(GameMode newMode)
     {
         currentMode = newMode;
 
-        // ���¿� ���� UI �� �ý��� Ȱ��ȭ/��Ȱ��ȭ
         switch (currentMode)
         {
             case GameMode.Normal:
-                normalUIPanel.SetActive(true);
-                buildUIPanel.SetActive(false);
-                editUIPanel.SetActive(false);
-                addUIPanel.SetActive(false);
-                
 
-                // �Ϲ� ���� ���ƿ� �� ī�޶� ����ġ
-                if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
-                cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(normalCameraPosition, normalCameraRotation));
+                if (normalUIPanel != null)
+                    normalUIPanel.SetActive(true);
+
+                if (buildUIPanel != null)
+                    buildUIPanel.SetActive(false);
+
+                if (editUIPanel != null)
+                    editUIPanel.SetActive(false);
+
+                if (addUIPanel != null)
+                    addUIPanel.SetActive(false);
+
+                if (cameraMoveCoroutine != null)
+                    StopCoroutine(cameraMoveCoroutine);
+
+                cameraMoveCoroutine =
+                    StartCoroutine(
+                        MoveCameraToCoords(
+                            normalCameraPosition,
+                            normalCameraRotation
+                        )
+                    );
+
                 break;
 
             case GameMode.Build:
-                normalUIPanel.SetActive(false);
-                buildUIPanel.SetActive(true);
-                editUIPanel.SetActive(false);
-                addUIPanel.SetActive(false);
 
-                /*
-                // ���� ���� �����ϴ� ������ ī�޶� ���¸� ���
-                if (buildCameraPosition == normalCameraPosition || buildCameraPosition == Vector3.zero)
-                {
-                    buildCameraPosition = cameraTransform.position;
-                    buildCameraRotation = cameraTransform.rotation;
-                }
-                */
+                if (normalUIPanel != null)
+                    normalUIPanel.SetActive(false);
+
+                if (buildUIPanel != null)
+                    buildUIPanel.SetActive(true);
+
+                if (editUIPanel != null)
+                    editUIPanel.SetActive(false);
+
+                if (addUIPanel != null)
+                    addUIPanel.SetActive(false);
+
                 break;
-                
 
             case GameMode.Add:
-                normalUIPanel.SetActive(false);
-                buildUIPanel.SetActive(false);
-                editUIPanel.SetActive(false);
-                addUIPanel.SetActive(true);
 
-                // A ī�װ�� �ٷ� ����
+                if (normalUIPanel != null)
+                    normalUIPanel.SetActive(false);
+
+                if (buildUIPanel != null)
+                    buildUIPanel.SetActive(false);
+
+                if (editUIPanel != null)
+                    editUIPanel.SetActive(false);
+
+                if (addUIPanel != null)
+                    addUIPanel.SetActive(true);
+
+                // A 카테고리
                 FilterFurnitureMenu("A");
+
                 break;
         }
     }
 
+    // =========================================================
+    // 새 가구 생성
+    // =========================================================
 
-    // ������Ʈ ����
-    public void ClickSpawnButtonAtCenter(FurnitureData data)
+    public void ClickSpawnButtonAtCenter(
+        FurnitureData data)
     {
-        if (data == null) return;
-  
-        // �� �Ѱ�� ��ǥ �� ȸ�� ����
-        Vector3 centerPos = new Vector3(0.5f, 0f, 0f);
-        Quaternion targetRotation = Quaternion.Euler(-90f, 0f, 0f);
+        if (data == null)
+            return;
 
-        // ���� ���� ���� ���� (Ȥ�ø���ϱ�)
-        if (currentSpawnedObject != null) Destroy(currentSpawnedObject);
-
-        // ���������� ��¥ ���� ����
-        currentSpawnedObject = Instantiate(commonFurniturePrefab, centerPos, targetRotation);
-
-        // ��Ʈ ���� ���� ����
-        FurnitureSetup setup = currentSpawnedObject.GetComponent<FurnitureSetup>();
-        if (setup != null)
+        if (commonFurniturePrefab == null)
         {
-            setup.SetupFurniture(data);
+            Debug.LogError(
+                "commonFurniturePrefab이 설정되지 않았습니다."
+            );
+
+            return;
         }
 
-        // Ȯ�� ���̹Ƿ� ī�޶� ���� ���̾� ó�� ���� ����
-        // ������ ��� ui ���� ������ ��� �� �ֵ��� ���
+        // -----------------------------------------------------
+        // 기본 위치 / 회전
+        // -----------------------------------------------------
 
-        // ��带 Add ���� ����
-        ChangeMode(GameMode.Add);
+        Vector3 preferredPosition =
+            new Vector3(
+                0.5f,
+                0f,
+                0f
+            );
 
+        Quaternion targetRotation =
+            Quaternion.Euler(
+                -90f,
+                0f,
+                0f
+            );
+
+        // 기존 미리보기 가구가 있다면
+        // 현재 위치에서 가구 종류만 바꾸기 위해 위치를 기억
+        GameObject oldObject =
+            currentSpawnedObject;
+
+        FurnitureData oldData =
+            currentFurnitureData;
+
+        if (oldObject != null)
+        {
+            preferredPosition =
+                oldObject.transform.position;
+
+            targetRotation =
+                oldObject.transform.rotation;
+
+            // 기존 미리보기 비활성화
+            oldObject.SetActive(false);
+        }
+
+        // -----------------------------------------------------
+        // 새 가구 생성
+        // -----------------------------------------------------
+
+        currentSpawnedObject =
+            Instantiate(
+                commonFurniturePrefab,
+                preferredPosition,
+                targetRotation
+            );
+
+        FurnitureSetup setup =
+            currentSpawnedObject
+                .GetComponent<FurnitureSetup>();
+
+        if (setup == null)
+        {
+            Debug.LogError(
+                "commonFurniturePrefab에 FurnitureSetup이 없습니다."
+            );
+
+            Destroy(currentSpawnedObject);
+
+            currentSpawnedObject = null;
+
+            if (oldObject != null)
+            {
+                oldObject.SetActive(true);
+                currentSpawnedObject =
+                    oldObject;
+            }
+
+            return;
+        }
+
+        setup.SetupFurniture(data);
+
+        // -----------------------------------------------------
+        // ObjectDrag 찾기
+        // -----------------------------------------------------
+
+        ObjectDrag drag =
+            currentSpawnedObject
+                .GetComponent<ObjectDrag>();
+
+        if (drag == null)
+        {
+            Debug.LogError(
+                "commonFurniturePrefab에 ObjectDrag가 없습니다."
+            );
+
+            Destroy(currentSpawnedObject);
+
+            currentSpawnedObject = null;
+
+            if (oldObject != null)
+            {
+                oldObject.SetActive(true);
+
+                currentSpawnedObject =
+                    oldObject;
+
+                currentFurnitureData =
+                    oldData;
+            }
+
+            return;
+        }
+
+        // 새 가구의 Renderer 다시 캐시
+        drag.CacheRenderers();
+
+        Physics.SyncTransforms();
+
+        // -----------------------------------------------------
+        // 빈 위치 탐색
+        // -----------------------------------------------------
+
+        bool foundPosition =
+            TryFindSpawnPosition(
+                drag,
+                preferredPosition,
+                targetRotation,
+                out Vector3 spawnPosition
+            );
+
+        // -----------------------------------------------------
+        // 성공
+        // -----------------------------------------------------
+
+        if (foundPosition)
+        {
+            currentSpawnedObject.transform.position =
+                spawnPosition;
+
+            currentSpawnedObject.transform.rotation =
+                targetRotation;
+
+            Physics.SyncTransforms();
+
+            // 기존 미리보기 삭제
+            if (oldObject != null)
+            {
+                Destroy(oldObject);
+            }
+
+            currentFurnitureData =
+                data;
+
+            ChangeMode(GameMode.Add);
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // 실패
+        // -----------------------------------------------------
+
+        Destroy(currentSpawnedObject);
+
+        currentSpawnedObject = null;
+
+        // 기존 가구가 있었다면 복구
+        if (oldObject != null)
+        {
+            oldObject.SetActive(true);
+
+            currentSpawnedObject =
+                oldObject;
+
+            currentFurnitureData =
+                oldData;
+
+            Debug.Log(
+                "새 가구를 놓을 수 없어 기존 가구를 유지합니다."
+            );
+        }
+        else
+        {
+            currentFurnitureData = null;
+        }
+
+        ShowWarningPopup(
+            "이 가구를 놓을 수 있는 공간이 없습니다."
+        );
     }
 
-    
+    // =========================================================
+    // 가구 자동 위치 탐색
+    // =========================================================
 
-
-
-    // ī�װ�� ��ư Ŭ����
-    public void FilterFurnitureMenu(string categoryToFilter)
+    private bool TryFindSpawnPosition(
+        ObjectDrag furniture,
+        Vector3 preferredPosition,
+        Quaternion targetRotation,
+        out Vector3 result)
     {
-        Debug.Log($"{categoryToFilter} ī�װ���� ���õǾ����ϴ�! ����� �����մϴ�.");
+        result = preferredPosition;
 
-        // 0. �̹��� ������Ʈ(����)
-        UpdateCategoryButtonImages(categoryToFilter);
+        if (placementSearchArea == null)
+        {
+            Debug.LogError(
+                "Placement Search Area가 설정되지 않았습니다."
+            );
 
-        // 1. ���� ȭ���� ���� ��� ������ ui�� ����
-        foreach (Transform child in furnitureContentParent)
+            return false;
+        }
+
+        if (autoSearchStep <= 0f)
+        {
+            autoSearchStep = 0.5f;
+        }
+
+        Bounds bounds =
+            placementSearchArea.bounds;
+
+        // 검색 시작점이 방 범위를 벗어났다면
+        // 가장 가까운 지점으로 보정
+        Vector3 searchOrigin =
+            preferredPosition;
+
+        searchOrigin.x =
+            Mathf.Clamp(
+                searchOrigin.x,
+                bounds.min.x,
+                bounds.max.x
+            );
+
+        searchOrigin.z =
+            Mathf.Clamp(
+                searchOrigin.z,
+                bounds.min.z,
+                bounds.max.z
+            );
+
+        // 시작점에서 방 전체를 탐색할 수 있도록
+        // 가장 먼 방향까지 필요한 ring 계산
+        float maxDistanceX =
+            Mathf.Max(
+                Mathf.Abs(
+                    searchOrigin.x - bounds.min.x
+                ),
+                Mathf.Abs(
+                    bounds.max.x - searchOrigin.x
+                )
+            );
+
+        float maxDistanceZ =
+            Mathf.Max(
+                Mathf.Abs(
+                    searchOrigin.z - bounds.min.z
+                ),
+                Mathf.Abs(
+                    bounds.max.z - searchOrigin.z
+                )
+            );
+
+        int maxRing =
+            Mathf.CeilToInt(
+                Mathf.Max(
+                    maxDistanceX,
+                    maxDistanceZ
+                ) / autoSearchStep
+            );
+
+        // -----------------------------------------------------
+        // 중앙 → 주변 순서로 탐색
+        // -----------------------------------------------------
+
+        for (int ring = 0;
+             ring <= maxRing;
+             ring++)
+        {
+            for (int x = -ring;
+                 x <= ring;
+                 x++)
+            {
+                for (int z = -ring;
+                     z <= ring;
+                     z++)
+                {
+                    // 해당 ring의 테두리만 검사
+                    if (Mathf.Max(
+                        Mathf.Abs(x),
+                        Mathf.Abs(z)
+                    ) != ring)
+                    {
+                        continue;
+                    }
+
+                    float candidateX =
+                        searchOrigin.x +
+                        x * autoSearchStep;
+
+                    float candidateZ =
+                        searchOrigin.z +
+                        z * autoSearchStep;
+
+                    // 방 범위 밖이면 무시
+                    if (candidateX < bounds.min.x ||
+                        candidateX > bounds.max.x ||
+                        candidateZ < bounds.min.z ||
+                        candidateZ > bounds.max.z)
+                    {
+                        continue;
+                    }
+
+                    // 아래에 놓을 수 있는 표면이 있는가?
+                    if (!TryGetSurfacePosition(
+                        furniture,
+                        candidateX,
+                        candidateZ,
+                        out Vector3 candidatePosition))
+                    {
+                        continue;
+                    }
+
+                    // 다른 가구 / 벽과 겹치는가?
+                    if (furniture.IsPositionBlocked(
+                        candidatePosition,
+                        targetRotation))
+                    {
+                        continue;
+                    }
+
+                    // 모든 조건 통과
+                    result =
+                        candidatePosition;
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // =========================================================
+    // 표면 찾기
+    // =========================================================
+
+    private bool TryGetSurfacePosition(
+        ObjectDrag furniture,
+        float x,
+        float z,
+        out Vector3 result)
+    {
+        result = Vector3.zero;
+
+        Bounds areaBounds =
+            placementSearchArea.bounds;
+
+        // 검색 영역 위쪽에서 아래로 Ray
+        Vector3 rayStart =
+            new Vector3(
+                x,
+                areaBounds.max.y +
+                    surfaceRayHeight,
+                z
+            );
+
+        RaycastHit[] hits =
+            Physics.RaycastAll(
+                rayStart,
+                Vector3.down,
+                surfaceRayHeight * 2f,
+                furniture.placementLayerMask,
+                QueryTriggerInteraction.Collide
+            );
+
+        Array.Sort(
+            hits,
+            (a, b) =>
+                a.distance.CompareTo(b.distance)
+        );
+
+        foreach (var hit in hits)
+        {
+            // 자기 자신 무시
+            if (hit.transform == furniture.transform ||
+                hit.transform.IsChildOf(
+                    furniture.transform))
+            {
+                continue;
+            }
+
+            // 위쪽을 바라보는 표면만 허용
+            if (hit.normal.y <
+                minSurfaceNormalY)
+            {
+                continue;
+            }
+
+            result =
+                new Vector3(
+                    x,
+                    hit.point.y,
+                    z
+                );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // =========================================================
+    // 가구 메뉴
+    // =========================================================
+
+    public void FilterFurnitureMenu(
+        string categoryToFilter)
+    {
+        UpdateCategoryButtonImages(
+            categoryToFilter
+        );
+
+        // 기존 버튼 삭제
+        foreach (Transform child
+                 in furnitureContentParent)
         {
             Destroy(child.gameObject);
         }
 
-        // 2. ��ü ���� ������ �߿��� ��� Ŭ���� ī�װ���� ��ġ�ϴ� ������ ��ư���� ����
-        foreach (FurnitureData data in allFurnitureDataList)
+        // 해당 카테고리 버튼 생성
+        foreach (FurnitureData data
+                 in allFurnitureDataList)
         {
-            // ��ҹ��� ����, ��ĭ ���� �Ȱ����� ��
-            if (data.categoryGroup.Trim().Equals(categoryToFilter.Trim(), System.StringComparison.OrdinalIgnoreCase))
-            {
-                // ��ư ������ ����
-                GameObject newBtn = Instantiate(furnitureItemPrefab, furnitureContentParent);
+            if (data == null)
+                continue;
 
-                // ������ ��ư�� ���� ������(�̸�, ������) ����
-                FurnitureItemUI itemUI = newBtn.GetComponent<FurnitureItemUI>();
+            if (data.categoryGroup
+                .Trim()
+                .Equals(
+                    categoryToFilter.Trim(),
+                    StringComparison.OrdinalIgnoreCase
+                ))
+            {
+                GameObject newBtn =
+                    Instantiate(
+                        furnitureItemPrefab,
+                        furnitureContentParent
+                    );
+
+                FurnitureItemUI itemUI =
+                    newBtn.GetComponent<FurnitureItemUI>();
+
+                if (itemUI == null)
+                {
+                    itemUI =
+                        newBtn.GetComponentInChildren<
+                            FurnitureItemUI>();
+                }
+
                 if (itemUI != null)
                 {
                     itemUI.Setup(data);
@@ -299,419 +822,684 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // �̹��� ���� �Լ�
-    private void UpdateCategoryButtonImages(string activeCategory)
+    // =========================================================
+    // 카테고리 이미지
+    // =========================================================
+
+    private void UpdateCategoryButtonImages(
+        string activeCategory)
     {
-        foreach (var btnData in categoryButtonList)
+        foreach (var btnData
+                 in categoryButtonList)
         {
             if (btnData.buttonImage == null)
-            {
-                Debug.LogWarning($"[{btnData.categoryName}] ��ư�� buttonImage�� �Ҵ���� �ʾҽ��ϴ�!");
                 continue;
-            }
 
-            if (btnData.selectedSprite == null || btnData.normalSprite == null)
+            bool isMatch =
+                btnData.categoryName
+                    .Trim()
+                    .Equals(
+                        activeCategory.Trim(),
+                        StringComparison.OrdinalIgnoreCase
+                    );
+
+            if (isMatch)
             {
-                Debug.LogWarning($"[{btnData.categoryName}] ��ư�� ��������Ʈ(Normal/Selected)�� �Ҵ���� �ʾҽ��ϴ�!");
-            }
-
-            bool isMatch = btnData.categoryName.Trim().Equals(activeCategory.Trim(), System.StringComparison.OrdinalIgnoreCase);
-
-            // ����Ʈ�� ��ϵ� ī�װ�� �̸��� ���� ���õ� ī�װ�� �̸��� ���ٸ�
-            if (btnData.categoryName.Trim().Equals(activeCategory.Trim(), System.StringComparison.OrdinalIgnoreCase))
-            {
-                // �ڽ��� ���õ� �̹����� ����
-                btnData.buttonImage.sprite = btnData.selectedSprite;
+                btnData.buttonImage.sprite =
+                    btnData.selectedSprite;
             }
             else
             {
-                // �ٸ� ��ư���� ���� ���� ���·� ����
-                btnData.buttonImage.sprite = btnData.normalSprite;
+                btnData.buttonImage.sprite =
+                    btnData.normalSprite;
             }
         }
     }
 
-    // ���� ��� ui���� �ٸ� ������ Ŭ�� ���� �� ȣ���� �Լ�
-    public void SwitchFurnitureData(FurnitureData newData)
+    // =========================================================
+    // 가구 종류 변경
+    // =========================================================
+
+    public void SwitchFurnitureData(
+        FurnitureData newData)
     {
-        
+        if (newData == null)
+            return;
+
+        // -----------------------------------------------------
+        // 현재 미리보기 가구가 없다면
+        // 새 가구를 처음 생성
+        // -----------------------------------------------------
 
         if (currentSpawnedObject == null)
         {
-            Debug.LogWarning("���� ȭ�鿡 ���� ���� ���� ������Ʈ�� �����ϴ�!");
+            ClickSpawnButtonAtCenter(
+                newData
+            );
+
             return;
         }
 
+        FurnitureSetup setup =
+            currentSpawnedObject
+                .GetComponent<FurnitureSetup>();
 
-        Debug.Log($"���� ������ '{newData.furnitureName}'(��)�� ��ȯ�մϴ�.");
+        ObjectDrag drag =
+            currentSpawnedObject
+                .GetComponent<ObjectDrag>();
 
-        // FurnitureSetup���� �� ������ �Ѱ��ֱ�
-        FurnitureSetup setup = currentSpawnedObject.GetComponent<FurnitureSetup>();
-        if (setup != null)
+        if (setup == null ||
+            drag == null)
         {
-            setup.SetupFurniture(newData);
+            Debug.LogWarning(
+                "현재 가구에 FurnitureSetup 또는 ObjectDrag가 없습니다."
+            );
+
+            return;
         }
 
+        // -----------------------------------------------------
+        // 기존 상태 저장
+        // -----------------------------------------------------
+
+        FurnitureData oldData =
+            setup.CurrentData;
+
+        Vector3 oldPosition =
+            currentSpawnedObject.transform.position;
+
+        Quaternion oldRotation =
+            currentSpawnedObject.transform.rotation;
+
+        // -----------------------------------------------------
+        // 새 가구 적용
+        // -----------------------------------------------------
+
+        setup.SetupFurniture(
+            newData
+        );
+
+        drag.CacheRenderers();
+
+        Physics.SyncTransforms();
+
+        // -----------------------------------------------------
+        // 현재 위치부터 새 크기로 다시 판정
+        // 안 되면 주변 빈 공간 탐색
+        // -----------------------------------------------------
+
+        bool foundPosition =
+            TryFindSpawnPosition(
+                drag,
+                oldPosition,
+                oldRotation,
+                out Vector3 newPosition
+            );
+
+        if (foundPosition)
+        {
+            currentSpawnedObject.transform.position =
+                newPosition;
+
+            currentSpawnedObject.transform.rotation =
+                oldRotation;
+
+            Physics.SyncTransforms();
+
+            currentFurnitureData =
+                newData;
+
+            Debug.Log(
+                $"가구가 '{newData.furnitureName}'으로 변경되었습니다."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // 새 가구가 어디에도 들어가지 않음
+        // → 이전 가구 복구
+        // -----------------------------------------------------
+
+        if (oldData != null)
+        {
+            setup.SetupFurniture(
+                oldData
+            );
+
+            drag.CacheRenderers();
+
+            currentSpawnedObject.transform.position =
+                oldPosition;
+
+            currentSpawnedObject.transform.rotation =
+                oldRotation;
+
+            Physics.SyncTransforms();
+
+            currentFurnitureData =
+                oldData;
+        }
+
+        ShowWarningPopup(
+            "이 가구는 현재 주변에 놓을 수 있는 공간이 없습니다."
+        );
     }
 
-    // Ȯ�� �� ���� ��� ��ȯ
+    // =========================================================
+    // 배치 확정
+    // =========================================================
+
     public void ConfirmPlacement()
     {
-        if (currentSpawnedObject == null) return;
+        if (currentSpawnedObject == null)
+            return;
 
-        
+        GameObject confirmedFurniture =
+            currentSpawnedObject;
 
-        // ��¥ ��ġ�� ������ �ٲ���
-        GameObject confirmedFurniture = currentSpawnedObject;
-
-        // ���� ����
         currentSpawnedObject = null;
 
-        // ���̾� ����
-        SetLayerRecursively(confirmedFurniture, LayerMask.NameToLayer("Selected"));
+        // Build 모드로 먼저 변경
+        currentMode =
+            GameMode.Build;
 
-        // �ܰ���
-        SelectionManager selManager = confirmedFurniture.GetComponent<SelectionManager>();
+        // SelectionManager를 사용해서
+        // 원래 Layer 저장 + Selected 적용
+        SelectionManager selManager =
+            confirmedFurniture
+                .GetComponent<SelectionManager>();
+
         if (selManager != null)
         {
+            selManager.ApplySelection();
             selManager.SetStencilValue(15);
         }
 
-        // ����(�������+����)��Ű��
-        SelectionObject(confirmedFurniture.transform);
-
-        // ��� ����
-        currentMode = GameMode.Build;
+        // 현재 선택 대상으로 설정
+        SelectionObject(
+            confirmedFurniture.transform
+        );
     }
 
-    // �ڽĵ� ����
-    private void SetLayerRecursively(GameObject obj, int newLayer)
+    // =========================================================
+    // 가구 배치 취소
+    // =========================================================
+
+    public void CancelSpawn()
     {
-        if (obj == null) return;
-
-        // ���� ���� ������Ʈ�� ���̾ 'FurnitureSurface'��� ���̾ �ٲ��� �ʰ� ����
-        int surfaceLayer = LayerMask.NameToLayer("FurnitureSurface");
-        if (obj.layer != surfaceLayer)
-        {
-            obj.layer = newLayer;
-        }
-
-        foreach (Transform child in obj.transform)
-        {
-            if(child == null) continue;
-            SetLayerRecursively(child.gameObject, newLayer);
-        }
-    }
-
-   // ���� ���� ���
-   public void CancelSpawn()
-    {
-        // ���� ���� �����Ͽ� �������� ������ ����
         if (currentSpawnedObject != null)
         {
-            Destroy(currentSpawnedObject);
-            currentSpawnedObject = null; // ���� �ʱ�ȭ
+            Destroy(
+                currentSpawnedObject
+            );
+
+            currentSpawnedObject = null;
         }
+
+        currentFurnitureData = null;
     }
 
-   
+    // =========================================================
+    // 가구 선택
+    // =========================================================
 
-
-
-
-    // ������Ʈ ���� ��
-    public void SelectionObject(Transform targetTransform)
+    public void SelectionObject(
+        Transform targetTransform)
     {
-        // ���� UI Ȱ��ȭ
-        editUIPanel.SetActive(true);
+        if (targetTransform == null)
+            return;
 
-        // ���� UI ��Ȱ��ȭ
-        buildUIPanel.SetActive(false);
+        // UI
+        if (editUIPanel != null)
+            editUIPanel.SetActive(true);
 
-        // ���� UI ��Ȱ��ȭ
-        addUIPanel.SetActive(false);
+        if (buildUIPanel != null)
+            buildUIPanel.SetActive(false);
 
-        // ���� ������Ʈ ���
-        selectedTarget = targetTransform;
+        if (addUIPanel != null)
+            addUIPanel.SetActive(false);
 
-        
+        // 현재 선택 대상
+        selectedTarget =
+            targetTransform;
 
-        // ī�޶� �̵�
-        if (cameraMoveCoroutine != null ) StopCoroutine(cameraMoveCoroutine);
-        cameraMoveCoroutine = StartCoroutine(MoveCameraToTarget(targetTransform.position));
+        // 카메라 이동
+        if (cameraMoveCoroutine != null)
+            StopCoroutine(
+                cameraMoveCoroutine
+            );
+
+        cameraMoveCoroutine =
+            StartCoroutine(
+                MoveCameraToTarget(
+                    targetTransform.position
+                )
+            );
     }
 
-    // ������Ʈ ���� ���� ��
+    // =========================================================
+    // 선택 해제
+    // =========================================================
+
     public void DeselectObject()
     {
-        // ���� UI ��Ȱ��ȭ
-        editUIPanel.SetActive(false);
+        if (editUIPanel != null)
+            editUIPanel.SetActive(false);
 
-        // ���� UI Ȱ��ȭ
-        buildUIPanel.SetActive(true);
+        if (buildUIPanel != null)
+            buildUIPanel.SetActive(true);
 
-        // ������� ������Ʈ �ر�
         selectedTarget = null;
 
-        // ī�޶� ����
-        if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
-        cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(buildCameraPosition, buildCameraRotation));
+        if (cameraMoveCoroutine != null)
+            StopCoroutine(
+                cameraMoveCoroutine
+            );
+
+        cameraMoveCoroutine =
+            StartCoroutine(
+                MoveCameraToCoords(
+                    buildCameraPosition,
+                    buildCameraRotation
+                )
+            );
     }
 
-    // ī�޶� �ε巴�� Ÿ�� ��ġ(+������)�� �̵���Ű�� �ڷ�ƾ
-    private IEnumerator MoveCameraToTarget(Vector3 targetPosition)
+    // =========================================================
+    // 카메라 이동
+    // =========================================================
+
+    private IEnumerator MoveCameraToTarget(
+        Vector3 targetPosition)
     {
-        Vector3 desiredPosition = targetPosition + cameraOffset;
+        Vector3 desiredPosition =
+            targetPosition +
+            cameraOffset;
+
         float duration = 0.5f;
         float elapsed = 0f;
 
-        Vector3 startPosition = cameraTransform.position;
-        Quaternion startRotation = cameraTransform.rotation;
+        Vector3 startPosition =
+            cameraTransform.position;
 
-        Vector3 directionToTarget = targetPosition - desiredPosition;
-        Quaternion desiredRotation = Quaternion.LookRotation(directionToTarget);
+        Quaternion startRotation =
+            cameraTransform.rotation;
+
+        Vector3 directionToTarget =
+            targetPosition -
+            desiredPosition;
+
+        Quaternion desiredRotation =
+            Quaternion.LookRotation(
+                directionToTarget
+            );
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / duration;
 
-            // �ε巯�� ����/���� ����
-            t = Mathf.SmoothStep(0f, 1f, t);
+            float t =
+                elapsed / duration;
 
-            cameraTransform.position = Vector3.Lerp(startPosition, desiredPosition, t);
-            cameraTransform.rotation = Quaternion.Lerp(startRotation, desiredRotation, t);
+            t =
+                Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    t
+                );
+
+            cameraTransform.position =
+                Vector3.Lerp(
+                    startPosition,
+                    desiredPosition,
+                    t
+                );
+
+            cameraTransform.rotation =
+                Quaternion.Lerp(
+                    startRotation,
+                    desiredRotation,
+                    t
+                );
+
             yield return null;
         }
 
-        cameraTransform.position = desiredPosition;
-        cameraTransform.rotation = desiredRotation;
+        cameraTransform.position =
+            desiredPosition;
 
+        cameraTransform.rotation =
+            desiredRotation;
     }
 
-    private IEnumerator MoveCameraToCoords(Vector3 targetPos, Quaternion targetRot)
+    private IEnumerator MoveCameraToCoords(
+        Vector3 targetPos,
+        Quaternion targetRot)
     {
         float duration = 0.5f;
         float elapsed = 0f;
 
-        Vector3 startPosition = cameraTransform.position;
-        Quaternion startRotation = cameraTransform.rotation;
+        Vector3 startPosition =
+            cameraTransform.position;
+
+        Quaternion startRotation =
+            cameraTransform.rotation;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            t = Mathf.SmoothStep(0f, 1f, t);
 
-            cameraTransform.position = Vector3.Lerp(startPosition, targetPos, t);
-            cameraTransform.rotation = Quaternion.Slerp(startRotation, targetRot, t);
+            float t =
+                elapsed / duration;
+
+            t =
+                Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    t
+                );
+
+            cameraTransform.position =
+                Vector3.Lerp(
+                    startPosition,
+                    targetPos,
+                    t
+                );
+
+            cameraTransform.rotation =
+                Quaternion.Slerp(
+                    startRotation,
+                    targetRot,
+                    t
+                );
+
             yield return null;
         }
 
-        cameraTransform.position = targetPos;
-        cameraTransform.rotation = targetRot;
+        cameraTransform.position =
+            targetPos;
+
+        cameraTransform.rotation =
+            targetRot;
     }
 
-    // ���� �Ϸ�(����) ��ư
+    // =========================================================
+    // 편집 완료
+    // =========================================================
+
     public void CompleteEditing()
-    {
-        SelectionManager[] selectedObjects = FindObjectsOfType<SelectionManager>();
-        foreach(var obj in selectedObjects)
-        {
-            if (obj.gameObject.layer == LayerMask.NameToLayer("Selected"))
-            {
-                obj.ResetSelection();
-            }
-        }
-        // ���� ���� �� ī�޶� ���� ����
-        DeselectObject();
-        // ���� ��� build�� ����
-        ChangeMode(GameMode.Build);
-    }
-    
-
-    // ������Ʈ �̵�
-    public void StartMoveMode()
-    {
-        if (selectedTarget == null) return;
-
-        
-
-        // ���� UI ��� �̵� UI �ѱ�
-        editUIPanel.SetActive(false);
-        if (moveUIPanel != null) moveUIPanel.SetActive(true);
-
-        // ī�޶� ��ġ �ǵ�����
-        if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
-        cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(buildCameraPosition, buildCameraRotation));
-
-        // �ش� ������Ʈ�� ObjectDrag ��ũ��Ʈ ã�� �̵� ���� ���·� ����
-        ObjectDrag dragScript = selectedTarget.GetComponent<ObjectDrag>();
-        if (dragScript != null) dragScript.isMoveMode = true;
-        
-    }
-
-    // ȸ�� ��ư Ŭ�� ��
-    public void RotateObject(float angle) // angle�� 45 Ȥ�� -45
     {
         if (selectedTarget != null)
         {
-            /*
-             * //������ �������� �ϴ°�
-            
-            selectedTarget.Rotate(Vector3.up, angle, Space.Self);
-            Debug.Log($"{selectedTarget.name} ȸ����! ���� ����: {selectedTarget.eulerAngles.y}");
-            */
+            SelectionManager selManager =
+                selectedTarget
+                    .GetComponent<SelectionManager>();
 
-            // ���� ��ǥ �������� �ϴ°�
-            // ���� ȸ�������� Y�� �������� angle��ŭ �� ȸ��
-            if (selectedTarget != null)
+            if (selManager != null)
             {
-                selectedTarget.Rotate(Vector3.up, angle, Space.World);
+                selManager.ResetSelection();
             }
         }
+
+        DeselectObject();
+
+        ChangeMode(
+            GameMode.Build
+        );
     }
 
-    // �巡�� ������ �� (���콺���� �� ���� ��)
+    // =========================================================
+    // 이동 시작
+    // =========================================================
+
+    public void StartMoveMode()
+    {
+        if (selectedTarget == null)
+            return;
+
+        if (editUIPanel != null)
+            editUIPanel.SetActive(false);
+
+        if (moveUIPanel != null)
+            moveUIPanel.SetActive(true);
+
+        if (cameraMoveCoroutine != null)
+            StopCoroutine(
+                cameraMoveCoroutine
+            );
+
+        cameraMoveCoroutine =
+            StartCoroutine(
+                MoveCameraToCoords(
+                    buildCameraPosition,
+                    buildCameraRotation
+                )
+            );
+
+        ObjectDrag dragScript =
+            selectedTarget
+                .GetComponent<ObjectDrag>();
+
+        if (dragScript != null)
+        {
+            dragScript.isMoveMode =
+                true;
+        }
+    }
+
+    // =========================================================
+    // 회전
+    // =========================================================
+
+    public void RotateObject(
+        float angle)
+    {
+        if (selectedTarget == null)
+            return;
+
+        selectedTarget.Rotate(
+            Vector3.up,
+            angle,
+            Space.World
+        );
+    }
+
+    // =========================================================
+    // 배치 검사
+    // =========================================================
+
     public void CheckPlacementValidity()
     {
-        
         bool canPlace = true;
 
-        /* // ���߿� �߰��ؿ�:
-         * if (���� �ε����ų� �ٸ� ������ ��ģ�ٸ�)
-         * {
-         *     canPlace = false
-         * }
-         */
-
-        // ���� �� ������
         if (canPlace)
         {
-
-            Debug.Log("�巡�� �ӽ� ��ġ �Ϸ� (�̵� ��� ���� ��)");
-            
-        }
-        else
-        {
-            // ���� �� ���� ��� ���ڸ��� ƨ��� ��� ����
+            Debug.Log(
+                "드래그 임시 위치 적용 완료"
+            );
         }
     }
+
+    // =========================================================
+    // 이동 종료
+    // =========================================================
 
     public void EndMoveAndReturnToEdit()
     {
-        if (selectedTarget == null) return;
+        if (selectedTarget == null)
+            return;
 
-        // �̵� ��带 �����ϰ� �ٽ� ���� ���·� ���
-        ObjectDrag dragScript = selectedTarget.GetComponent<ObjectDrag>();
-        if (dragScript != null) dragScript.isMoveMode = false; // �巡�� ���
+        ObjectDrag dragScript =
+            selectedTarget
+                .GetComponent<ObjectDrag>();
 
-        // �̵� UI ��� �ٽ� ���� UI �ѱ�
-        if (moveUIPanel != null) moveUIPanel.SetActive(false);
-        editUIPanel.SetActive(true);
+        if (dragScript != null)
+        {
+            dragScript.isMoveMode =
+                false;
+        }
 
-        // �ٽ� �������� Ÿ������ ī�޶� ����
-        if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
-        cameraMoveCoroutine = StartCoroutine(MoveCameraToTarget(selectedTarget.position));
+        if (moveUIPanel != null)
+            moveUIPanel.SetActive(false);
+
+        if (editUIPanel != null)
+            editUIPanel.SetActive(true);
+
+        if (cameraMoveCoroutine != null)
+            StopCoroutine(
+                cameraMoveCoroutine
+            );
+
+        cameraMoveCoroutine =
+            StartCoroutine(
+                MoveCameraToTarget(
+                    selectedTarget.position
+                )
+            );
     }
 
+    // =========================================================
+    // 삭제
+    // =========================================================
 
-
-    // ������Ʈ ����
     public void ClickDeleteButton()
     {
-        // �˾�
-        if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(true);
+        if (deleteConfirmPopUP != null)
+            deleteConfirmPopUP.SetActive(true);
     }
 
-    // [��] ��������
     public void ConfirmDelete()
     {
         if (selectedTarget != null)
         {
-            // ������ ������Ʈ ����
-            Destroy(selectedTarget.gameObject);
+            Destroy(
+                selectedTarget.gameObject
+            );
         }
 
-        // �˾� �ݱ�
-        if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(false);
+        if (deleteConfirmPopUP != null)
+            deleteConfirmPopUP.SetActive(false);
 
-        // ī�޶� ���� �� ���� ��� ����
-        editUIPanel.SetActive(false);
-        buildUIPanel.SetActive(true);
+        if (editUIPanel != null)
+            editUIPanel.SetActive(false);
+
+        if (buildUIPanel != null)
+            buildUIPanel.SetActive(true);
+
         selectedTarget = null;
 
-        if (cameraMoveCoroutine != null) StopCoroutine(cameraMoveCoroutine);
-        cameraMoveCoroutine = StartCoroutine(MoveCameraToCoords(buildCameraPosition, buildCameraRotation));
+        if (cameraMoveCoroutine != null)
+            StopCoroutine(
+                cameraMoveCoroutine
+            );
+
+        cameraMoveCoroutine =
+            StartCoroutine(
+                MoveCameraToCoords(
+                    buildCameraPosition,
+                    buildCameraRotation
+                )
+            );
     }
 
-    // [�ƴϿ�] ��������
     public void CancelDelete()
     {
-        // �˾��� ���� (���� ���� ����)
-        if (deleteConfirmPopUP != null) deleteConfirmPopUP.SetActive(false );
+        if (deleteConfirmPopUP != null)
+            deleteConfirmPopUP.SetActive(false);
     }
 
+    // =========================================================
+    // 현재 다른 가구를 편집 중인지
+    // =========================================================
 
-
-
-    // ���� ���� ������ �Ǻ�
-    public bool IsAlreadyEditing(Transform clickingObject)
+    public bool IsAlreadyEditing(
+        Transform clickingObject)
     {
-        // ��� Ŭ���� ������Ʈ�� ���� �Ǿ��ִ� ������Ʈ�� �ƴ϶�� true
-        if (selectedTarget != null && selectedTarget != clickingObject)
+        if (selectedTarget != null &&
+            selectedTarget != clickingObject)
         {
             return true;
         }
+
         return false;
     }
 
+    // =========================================================
+    // 모드 버튼
+    // =========================================================
 
-    public void SetNormalMode() => ChangeMode(GameMode.Normal);
-    public void SetBuildMode() => ChangeMode(GameMode.Build);
-
-
-    // ��� �˾� ȣ�� �Լ�
-    public void ShowWarningPopup(string message = "�ش� ��ġ���� ������ ���� �� �����ϴ�.")
+    public void SetNormalMode()
     {
-        if (warningPopupPanel == null) return;
+        ChangeMode(
+            GameMode.Normal
+        );
+    }
+
+    public void SetBuildMode()
+    {
+        ChangeMode(
+            GameMode.Build
+        );
+    }
+
+    // =========================================================
+    // Warning Popup
+    // =========================================================
+
+    public void ShowWarningPopup(
+        string message =
+            "해당 위치에는 가구를 놓을 수 없습니다.")
+    {
+        if (warningPopupPanel == null)
+            return;
 
         if (warningText != null)
         {
-            warningText.text = message;
+            warningText.text =
+                message;
         }
 
         if (warningCoroutine != null)
         {
-            StopCoroutine(warningCoroutine);
+            StopCoroutine(
+                warningCoroutine
+            );
         }
 
-        warningCoroutine = StartCoroutine(HideWarningPopupRoutine(2.0f)); // 2�� �� �ڵ� ��Ȱ��ȭ
+        warningCoroutine =
+            StartCoroutine(
+                HideWarningPopupRoutine(
+                    2f
+                )
+            );
     }
 
-    private IEnumerator HideWarningPopupRoutine(float delay)
+    private IEnumerator HideWarningPopupRoutine(
+        float delay)
     {
         warningPopupPanel.SetActive(true);
-        yield return new WaitForSeconds(delay);
+
+        yield return new WaitForSeconds(
+            delay
+        );
+
         warningPopupPanel.SetActive(false);
     }
 
-
-
+    // =========================================================
+    // 재시작
+    // =========================================================
 
     public void ClickRestartButton()
     {
-        // �˾�
-        if (restartConfirmPopUP != null) restartConfirmPopUP.SetActive(true);
+        if (restartConfirmPopUP != null)
+            restartConfirmPopUP.SetActive(true);
     }
 
-    
-
-    // [�ƴϿ�] ��������
     public void CancelRestart()
     {
-        // �˾��� ���� (���� ���� ����)
-        if (restartConfirmPopUP != null) restartConfirmPopUP.SetActive(false);
+        if (restartConfirmPopUP != null)
+            restartConfirmPopUP.SetActive(false);
     }
 }
-
