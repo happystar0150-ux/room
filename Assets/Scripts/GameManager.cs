@@ -19,8 +19,7 @@ public class GameManager : MonoBehaviour
     // 현재 모드
     // =========================================================
 
-    public GameMode currentMode =
-        GameMode.Normal;
+    public GameMode currentMode = GameMode.Normal;
 
     // =========================================================
     // UI Panels
@@ -44,16 +43,16 @@ public class GameManager : MonoBehaviour
 
     public GameObject commonFurniturePrefab;
 
-    // 현재 미리보기 가구
+    // 현재 생성되어 있는 가구
     [Header("현재 가구")]
 
     public GameObject currentSpawnedObject;
 
-    // 현재 선택된 FurnitureData
+    // 현재 미리보기/선택에 사용 중인 FurnitureData
     private FurnitureData currentFurnitureData;
 
     // =========================================================
-    // Camera
+    // Camera Reference
     // =========================================================
 
     [Header("Camera Reference")]
@@ -63,13 +62,13 @@ public class GameManager : MonoBehaviour
     public Vector3 cameraOffset =
         new Vector3(0f, 5f, -5f);
 
-    // 현재 선택된 실제 가구
     private Transform selectedTarget;
 
-    // 카메라 위치
+    // Normal 카메라
     private Vector3 normalCameraPosition;
     private Quaternion normalCameraRotation;
 
+    // Build 카메라
     private Vector3 buildCameraPosition;
     private Quaternion buildCameraRotation;
 
@@ -79,11 +78,7 @@ public class GameManager : MonoBehaviour
     // Singleton
     // =========================================================
 
-    public static GameManager Instance
-    {
-        get;
-        private set;
-    }
+    public static GameManager Instance { get; private set; }
 
     // =========================================================
     // Furniture Data
@@ -120,7 +115,7 @@ public class GameManager : MonoBehaviour
         new List<CategoryButtonData>();
 
     // =========================================================
-    // 자동 배치
+    // 자동 가구 배치
     // =========================================================
 
     [Header("자동 가구 배치")]
@@ -139,6 +134,14 @@ public class GameManager : MonoBehaviour
     [Tooltip("이 값 이상이면 충분히 평평한 윗면으로 인정")]
     [SerializeField]
     private float minSurfaceNormalY = 0.7f;
+
+    // =========================================================
+    // 기본 가구 배치 실패 여부
+    // =========================================================
+
+    // 기본 가구가 공간 부족으로 생성되지 않았고
+    // 사용자가 메뉴에서 다른 가구를 선택해야 하는 상태인지
+    private bool waitingForFurnitureSelection = false;
 
     // =========================================================
     // Awake
@@ -162,21 +165,20 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // Build 모드가 아니면 선택 처리 안 함
+        // Build 모드가 아니면 선택하지 않음
         if (currentMode != GameMode.Build)
             return;
 
         if (!Input.GetMouseButtonDown(0))
             return;
 
-        // UI 클릭은 무시
+        // UI 클릭이면 무시
         if (EventSystem.current != null &&
             EventSystem.current.IsPointerOverGameObject())
         {
             return;
         }
 
-        // 가구 선택
         HandleFurnitureSelectionClick();
     }
 
@@ -200,8 +202,7 @@ public class GameManager : MonoBehaviour
                 500f
             );
 
-        // 카메라에서 가까운 순서로 정렬
-        System.Array.Sort(
+        Array.Sort(
             hits,
             (a, b) =>
                 a.distance.CompareTo(b.distance)
@@ -212,28 +213,16 @@ public class GameManager : MonoBehaviour
             if (hit.transform == null)
                 continue;
 
-            Debug.Log(
-                $"클릭 Ray가 맞은 오브젝트: {hit.transform.name}"
-            );
-
             SelectionManager selManager =
                 hit.transform.GetComponentInParent<SelectionManager>();
 
             if (selManager == null)
                 continue;
 
-            Debug.Log(
-                $"가구 선택 성공: {selManager.gameObject.name}"
-            );
-
             selManager.OnSelectedByClick();
 
             return;
         }
-
-        Debug.Log(
-            "Raycast에 SelectionManager가 있는 가구가 없습니다."
-        );
     }
 
     // =========================================================
@@ -336,7 +325,7 @@ public class GameManager : MonoBehaviour
                 if (addUIPanel != null)
                     addUIPanel.SetActive(true);
 
-                // A 카테고리
+                // 기본 A 카테고리 표시
                 FilterFurnitureMenu("A");
 
                 break;
@@ -344,7 +333,7 @@ public class GameManager : MonoBehaviour
     }
 
     // =========================================================
-    // 새 가구 생성
+    // 기본 가구 추가 버튼
     // =========================================================
 
     public void ClickSpawnButtonAtCenter(
@@ -363,7 +352,7 @@ public class GameManager : MonoBehaviour
         }
 
         // -----------------------------------------------------
-        // 기본 위치 / 회전
+        // 기본 위치
         // -----------------------------------------------------
 
         Vector3 preferredPosition =
@@ -380,8 +369,11 @@ public class GameManager : MonoBehaviour
                 0f
             );
 
+        // -----------------------------------------------------
         // 기존 미리보기 가구가 있다면
-        // 현재 위치에서 가구 종류만 바꾸기 위해 위치를 기억
+        // 그 위치를 새 가구의 우선 위치로 사용
+        // -----------------------------------------------------
+
         GameObject oldObject =
             currentSpawnedObject;
 
@@ -396,131 +388,67 @@ public class GameManager : MonoBehaviour
             targetRotation =
                 oldObject.transform.rotation;
 
-            // 기존 미리보기 비활성화
             oldObject.SetActive(false);
         }
 
         // -----------------------------------------------------
-        // 새 가구 생성
+        // 새 가구를 넣을 수 있는지 검사하고 생성
         // -----------------------------------------------------
 
-        currentSpawnedObject =
-            Instantiate(
-                commonFurniturePrefab,
-                preferredPosition,
-                targetRotation
-            );
-
-        FurnitureSetup setup =
-            currentSpawnedObject
-                .GetComponent<FurnitureSetup>();
-
-        if (setup == null)
-        {
-            Debug.LogError(
-                "commonFurniturePrefab에 FurnitureSetup이 없습니다."
-            );
-
-            Destroy(currentSpawnedObject);
-
-            currentSpawnedObject = null;
-
-            if (oldObject != null)
-            {
-                oldObject.SetActive(true);
-                currentSpawnedObject =
-                    oldObject;
-            }
-
-            return;
-        }
-
-        setup.SetupFurniture(data);
-
-        // -----------------------------------------------------
-        // ObjectDrag 찾기
-        // -----------------------------------------------------
-
-        ObjectDrag drag =
-            currentSpawnedObject
-                .GetComponent<ObjectDrag>();
-
-        if (drag == null)
-        {
-            Debug.LogError(
-                "commonFurniturePrefab에 ObjectDrag가 없습니다."
-            );
-
-            Destroy(currentSpawnedObject);
-
-            currentSpawnedObject = null;
-
-            if (oldObject != null)
-            {
-                oldObject.SetActive(true);
-
-                currentSpawnedObject =
-                    oldObject;
-
-                currentFurnitureData =
-                    oldData;
-            }
-
-            return;
-        }
-
-        // 새 가구의 Renderer 다시 캐시
-        drag.CacheRenderers();
-
-        Physics.SyncTransforms();
-
-        // -----------------------------------------------------
-        // 빈 위치 탐색
-        // -----------------------------------------------------
-
-        bool foundPosition =
-            TryFindSpawnPosition(
-                drag,
+        bool spawned =
+            TrySpawnFurniture(
+                data,
                 preferredPosition,
                 targetRotation,
+                out GameObject newObject,
                 out Vector3 spawnPosition
             );
 
-        // -----------------------------------------------------
+        // =====================================================
         // 성공
-        // -----------------------------------------------------
+        // =====================================================
 
-        if (foundPosition)
+        if (spawned)
         {
+            currentSpawnedObject =
+                newObject;
+
             currentSpawnedObject.transform.position =
                 spawnPosition;
 
             currentSpawnedObject.transform.rotation =
                 targetRotation;
 
+            currentFurnitureData =
+                data;
+
             Physics.SyncTransforms();
 
-            // 기존 미리보기 삭제
+            // 기존 미리보기 가구가 있었다면 삭제
             if (oldObject != null)
             {
                 Destroy(oldObject);
             }
 
-            currentFurnitureData =
-                data;
+            waitingForFurnitureSelection = false;
 
             ChangeMode(GameMode.Add);
 
             return;
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // 실패
-        // -----------------------------------------------------
+        // =====================================================
 
-        Destroy(currentSpawnedObject);
+        // 새 가구가 생성되었다면 제거
+        if (newObject != null)
+        {
+            Destroy(newObject);
+        }
 
         currentSpawnedObject = null;
+        currentFurnitureData = null;
 
         // 기존 가구가 있었다면 복구
         if (oldObject != null)
@@ -533,22 +461,130 @@ public class GameManager : MonoBehaviour
             currentFurnitureData =
                 oldData;
 
-            Debug.Log(
-                "새 가구를 놓을 수 없어 기존 가구를 유지합니다."
+            // 기존 가구 교체가 실패한 경우이므로
+            // 기존 가구는 그대로 유지
+            waitingForFurnitureSelection = false;
+
+            ShowWarningPopup(
+                "선택한 가구를 현재 위치에 놓을 수 없습니다."
             );
-        }
-        else
-        {
-            currentFurnitureData = null;
+
+            return;
         }
 
-        ShowWarningPopup(
-            "이 가구를 놓을 수 있는 공간이 없습니다."
-        );
+        // -----------------------------------------------------
+        // ★ 여기서 중요한 부분
+        //
+        // 기본 가구가 아예 들어가지 않는 경우에는
+        // 가구를 생성하지 않고 메뉴만 열어준다.
+        // -----------------------------------------------------
+
+        waitingForFurnitureSelection = true;
+
+        ChangeMode(GameMode.Add);
+
+        // 여기서는 경고창을 띄우지 않는다.
+        // 사용자가 다른 가구를 선택할 수 있게 메뉴를 열어둔다.
     }
 
     // =========================================================
-    // 가구 자동 위치 탐색
+    // 가구 생성 + 자동 배치
+    // =========================================================
+
+    private bool TrySpawnFurniture(
+        FurnitureData data,
+        Vector3 preferredPosition,
+        Quaternion targetRotation,
+        out GameObject spawnedObject,
+        out Vector3 spawnPosition)
+    {
+        spawnedObject = null;
+        spawnPosition = preferredPosition;
+
+        if (data == null)
+            return false;
+
+        if (commonFurniturePrefab == null)
+            return false;
+
+        // -----------------------------------------------------
+        // 임시 가구 생성
+        // -----------------------------------------------------
+
+        spawnedObject =
+            Instantiate(
+                commonFurniturePrefab,
+                preferredPosition,
+                targetRotation
+            );
+
+        FurnitureSetup setup =
+            spawnedObject.GetComponent<FurnitureSetup>();
+
+        if (setup == null)
+        {
+            Debug.LogError(
+                "commonFurniturePrefab에 FurnitureSetup이 없습니다."
+            );
+
+            Destroy(spawnedObject);
+            spawnedObject = null;
+
+            return false;
+        }
+
+        // 실제 가구 프리팹 생성
+        setup.SetupFurniture(data);
+
+        // -----------------------------------------------------
+        // ObjectDrag
+        // -----------------------------------------------------
+
+        ObjectDrag drag =
+            spawnedObject.GetComponent<ObjectDrag>();
+
+        if (drag == null)
+        {
+            Debug.LogError(
+                "commonFurniturePrefab에 ObjectDrag가 없습니다."
+            );
+
+            Destroy(spawnedObject);
+            spawnedObject = null;
+
+            return false;
+        }
+
+        // 새 가구의 Renderer 캐시
+        drag.CacheRenderers();
+
+        Physics.SyncTransforms();
+
+        // -----------------------------------------------------
+        // 빈 공간 탐색
+        // -----------------------------------------------------
+
+        bool foundPosition =
+            TryFindSpawnPosition(
+                drag,
+                preferredPosition,
+                targetRotation,
+                out spawnPosition
+            );
+
+        if (!foundPosition)
+        {
+            Destroy(spawnedObject);
+            spawnedObject = null;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    // =========================================================
+    // 자동 위치 탐색
     // =========================================================
 
     private bool TryFindSpawnPosition(
@@ -576,8 +612,7 @@ public class GameManager : MonoBehaviour
         Bounds bounds =
             placementSearchArea.bounds;
 
-        // 검색 시작점이 방 범위를 벗어났다면
-        // 가장 가까운 지점으로 보정
+        // 검색 시작점이 방 밖이면 가장 가까운 곳으로 보정
         Vector3 searchOrigin =
             preferredPosition;
 
@@ -595,25 +630,27 @@ public class GameManager : MonoBehaviour
                 bounds.max.z
             );
 
-        // 시작점에서 방 전체를 탐색할 수 있도록
-        // 가장 먼 방향까지 필요한 ring 계산
         float maxDistanceX =
             Mathf.Max(
                 Mathf.Abs(
-                    searchOrigin.x - bounds.min.x
+                    searchOrigin.x -
+                    bounds.min.x
                 ),
                 Mathf.Abs(
-                    bounds.max.x - searchOrigin.x
+                    bounds.max.x -
+                    searchOrigin.x
                 )
             );
 
         float maxDistanceZ =
             Mathf.Max(
                 Mathf.Abs(
-                    searchOrigin.z - bounds.min.z
+                    searchOrigin.z -
+                    bounds.min.z
                 ),
                 Mathf.Abs(
-                    bounds.max.z - searchOrigin.z
+                    bounds.max.z -
+                    searchOrigin.z
                 )
             );
 
@@ -622,11 +659,12 @@ public class GameManager : MonoBehaviour
                 Mathf.Max(
                     maxDistanceX,
                     maxDistanceZ
-                ) / autoSearchStep
+                ) /
+                autoSearchStep
             );
 
         // -----------------------------------------------------
-        // 중앙 → 주변 순서로 탐색
+        // 중앙 → 바깥쪽 순서로 검사
         // -----------------------------------------------------
 
         for (int ring = 0;
@@ -641,7 +679,7 @@ public class GameManager : MonoBehaviour
                      z <= ring;
                      z++)
                 {
-                    // 해당 ring의 테두리만 검사
+                    // 현재 ring의 테두리만 검사
                     if (Mathf.Max(
                         Mathf.Abs(x),
                         Mathf.Abs(z)
@@ -658,7 +696,7 @@ public class GameManager : MonoBehaviour
                         searchOrigin.z +
                         z * autoSearchStep;
 
-                    // 방 범위 밖이면 무시
+                    // 방 범위 밖이면 제외
                     if (candidateX < bounds.min.x ||
                         candidateX > bounds.max.x ||
                         candidateZ < bounds.min.z ||
@@ -712,7 +750,7 @@ public class GameManager : MonoBehaviour
         Bounds areaBounds =
             placementSearchArea.bounds;
 
-        // 검색 영역 위쪽에서 아래로 Ray
+        // 검색 영역 위에서 아래로 Ray
         Vector3 rayStart =
             new Vector3(
                 x,
@@ -746,7 +784,7 @@ public class GameManager : MonoBehaviour
                 continue;
             }
 
-            // 위쪽을 바라보는 표면만 허용
+            // 충분히 위를 바라보는 면만 허용
             if (hit.normal.y <
                 minSurfaceNormalY)
             {
@@ -777,7 +815,10 @@ public class GameManager : MonoBehaviour
             categoryToFilter
         );
 
-        // 기존 버튼 삭제
+        if (furnitureContentParent == null)
+            return;
+
+        // 기존 버튼 제거
         foreach (Transform child
                  in furnitureContentParent)
         {
@@ -857,7 +898,7 @@ public class GameManager : MonoBehaviour
     }
 
     // =========================================================
-    // 가구 종류 변경
+    // 가구 종류 변경 / 새 가구 선택
     // =========================================================
 
     public void SwitchFurnitureData(
@@ -866,19 +907,124 @@ public class GameManager : MonoBehaviour
         if (newData == null)
             return;
 
-        // -----------------------------------------------------
-        // 현재 미리보기 가구가 없다면
-        // 새 가구를 처음 생성
-        // -----------------------------------------------------
+        // =====================================================
+        // 현재 가구가 없는 경우
+        //
+        // ★ 기본 가구가 공간 부족으로 생성되지 않아
+        //    메뉴만 열려 있는 경우가 여기로 들어옴
+        // =====================================================
 
         if (currentSpawnedObject == null)
         {
-            ClickSpawnButtonAtCenter(
-                newData
+            Vector3 preferredPosition =
+                new Vector3(
+                    0.5f,
+                    0f,
+                    0f
+                );
+
+            Quaternion targetRotation =
+                Quaternion.Euler(
+                    -90f,
+                    0f,
+                    0f
+                );
+
+            // 혹시 선택 대기 상태라면 기본 위치에서 찾음
+            if (waitingForFurnitureSelection)
+            {
+                bool spawned =
+                    TrySpawnFurniture(
+                        newData,
+                        preferredPosition,
+                        targetRotation,
+                        out GameObject newObject,
+                        out Vector3 spawnPosition
+                    );
+
+                // ---------------------------------------------
+                // 선택한 가구가 들어감
+                // ---------------------------------------------
+
+                if (spawned)
+                {
+                    currentSpawnedObject =
+                        newObject;
+
+                    currentSpawnedObject.transform.position =
+                        spawnPosition;
+
+                    currentSpawnedObject.transform.rotation =
+                        targetRotation;
+
+                    currentFurnitureData =
+                        newData;
+
+                    waitingForFurnitureSelection =
+                        false;
+
+                    Physics.SyncTransforms();
+
+                    Debug.Log(
+                        $"'{newData.furnitureName}' 가구를 생성했습니다."
+                    );
+
+                    return;
+                }
+
+                // ---------------------------------------------
+                // 선택한 가구도 들어가지 않음
+                // ---------------------------------------------
+
+                ShowWarningPopup(
+                    "선택한 가구는 현재 방에 놓을 공간이 없습니다."
+                );
+
+                return;
+            }
+
+            // 선택 대기 상태가 아니더라도
+            // 현재 가구가 없으면 그냥 새 가구 생성 시도
+            bool normalSpawn =
+                TrySpawnFurniture(
+                    newData,
+                    preferredPosition,
+                    targetRotation,
+                    out GameObject normalObject,
+                    out Vector3 normalPosition
+                );
+
+            if (normalSpawn)
+            {
+                currentSpawnedObject =
+                    normalObject;
+
+                currentSpawnedObject.transform.position =
+                    normalPosition;
+
+                currentSpawnedObject.transform.rotation =
+                    targetRotation;
+
+                currentFurnitureData =
+                    newData;
+
+                Physics.SyncTransforms();
+
+                return;
+            }
+
+            ShowWarningPopup(
+                "선택한 가구는 현재 방에 놓을 공간이 없습니다."
             );
 
             return;
         }
+
+        // =====================================================
+        // 이미 가구가 있는 상태
+        //
+        // → 기존 가구를 다른 가구로 변경
+        // =====================================================
 
         FurnitureSetup setup =
             currentSpawnedObject
@@ -898,35 +1044,33 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // -----------------------------------------------------
-        // 기존 상태 저장
-        // -----------------------------------------------------
-
+        // 기존 데이터
         FurnitureData oldData =
             setup.CurrentData;
 
+        // 기존 위치 / 회전
         Vector3 oldPosition =
             currentSpawnedObject.transform.position;
 
         Quaternion oldRotation =
             currentSpawnedObject.transform.rotation;
 
-        // -----------------------------------------------------
+        // =====================================================
         // 새 가구 적용
-        // -----------------------------------------------------
+        // =====================================================
 
         setup.SetupFurniture(
             newData
         );
 
+        // 새 프리팹의 Renderer 캐시
         drag.CacheRenderers();
 
         Physics.SyncTransforms();
 
-        // -----------------------------------------------------
-        // 현재 위치부터 새 크기로 다시 판정
-        // 안 되면 주변 빈 공간 탐색
-        // -----------------------------------------------------
+        // =====================================================
+        // 새 가구의 실제 크기로 다시 위치 검사
+        // =====================================================
 
         bool foundPosition =
             TryFindSpawnPosition(
@@ -936,6 +1080,10 @@ public class GameManager : MonoBehaviour
                 out Vector3 newPosition
             );
 
+        // =====================================================
+        // 새 가구도 놓을 수 있음
+        // =====================================================
+
         if (foundPosition)
         {
             currentSpawnedObject.transform.position =
@@ -944,22 +1092,22 @@ public class GameManager : MonoBehaviour
             currentSpawnedObject.transform.rotation =
                 oldRotation;
 
-            Physics.SyncTransforms();
-
             currentFurnitureData =
                 newData;
 
+            Physics.SyncTransforms();
+
             Debug.Log(
-                $"가구가 '{newData.furnitureName}'으로 변경되었습니다."
+                $"가구를 '{newData.furnitureName}'으로 변경했습니다."
             );
 
             return;
         }
 
-        // -----------------------------------------------------
-        // 새 가구가 어디에도 들어가지 않음
-        // → 이전 가구 복구
-        // -----------------------------------------------------
+        // =====================================================
+        // 새 가구를 어디에도 놓을 수 없음
+        // → 기존 가구 복구
+        // =====================================================
 
         if (oldData != null)
         {
@@ -975,14 +1123,14 @@ public class GameManager : MonoBehaviour
             currentSpawnedObject.transform.rotation =
                 oldRotation;
 
-            Physics.SyncTransforms();
-
             currentFurnitureData =
                 oldData;
+
+            Physics.SyncTransforms();
         }
 
         ShowWarningPopup(
-            "이 가구는 현재 주변에 놓을 수 있는 공간이 없습니다."
+            "선택한 가구는 현재 위치에 놓을 수 없고, 주변에도 놓을 공간이 없습니다."
         );
     }
 
@@ -999,13 +1147,15 @@ public class GameManager : MonoBehaviour
             currentSpawnedObject;
 
         currentSpawnedObject = null;
+        currentFurnitureData = null;
 
-        // Build 모드로 먼저 변경
+        waitingForFurnitureSelection = false;
+
+        // Build 모드
         currentMode =
             GameMode.Build;
 
-        // SelectionManager를 사용해서
-        // 원래 Layer 저장 + Selected 적용
+        // 선택 상태 적용
         SelectionManager selManager =
             confirmedFurniture
                 .GetComponent<SelectionManager>();
@@ -1016,14 +1166,14 @@ public class GameManager : MonoBehaviour
             selManager.SetStencilValue(15);
         }
 
-        // 현재 선택 대상으로 설정
+        // 현재 선택 대상
         SelectionObject(
             confirmedFurniture.transform
         );
     }
 
     // =========================================================
-    // 가구 배치 취소
+    // 가구 추가 취소
     // =========================================================
 
     public void CancelSpawn()
@@ -1038,6 +1188,8 @@ public class GameManager : MonoBehaviour
         }
 
         currentFurnitureData = null;
+
+        waitingForFurnitureSelection = false;
     }
 
     // =========================================================
@@ -1050,7 +1202,6 @@ public class GameManager : MonoBehaviour
         if (targetTransform == null)
             return;
 
-        // UI
         if (editUIPanel != null)
             editUIPanel.SetActive(true);
 
@@ -1060,11 +1211,9 @@ public class GameManager : MonoBehaviour
         if (addUIPanel != null)
             addUIPanel.SetActive(false);
 
-        // 현재 선택 대상
         selectedTarget =
             targetTransform;
 
-        // 카메라 이동
         if (cameraMoveCoroutine != null)
             StopCoroutine(
                 cameraMoveCoroutine
@@ -1410,7 +1559,7 @@ public class GameManager : MonoBehaviour
     }
 
     // =========================================================
-    // 현재 다른 가구를 편집 중인지
+    // 다른 가구를 편집 중인지
     // =========================================================
 
     public bool IsAlreadyEditing(
