@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// °ÔÀÓ ¸ðµå
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 public enum GameMode
 {
     Normal,

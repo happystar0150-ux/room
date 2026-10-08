@@ -5,46 +5,46 @@ using UnityEngine.UI;
 
 public class HairButton : MonoBehaviour
 {
-    public GameObject hairPrefab; // ÀÌ ¹öÆ°ÀÌ ÀÔÇôÁÙ ¸Ó¸®Ä«¶ô ÇÁ¸®ÆÕ
+    public GameObject hairPrefab; // ï¿½ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ó¸ï¿½Ä«ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private Button button;
     private CharacterManager manager;
 
     private void Awake()
     {
         button = GetComponent<Button>();
-        manager = FindFirstObjectByType<CharacterManager>(); // ¾À¿¡¼­ ¸Å´ÏÀú Ã£±â
+        manager = FindFirstObjectByType<CharacterManager>(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Å´ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½
 
-        // ¹öÆ° Å¬¸¯ ½Ã ÀÌº¥Æ® ¿¬°á
+        // ï¿½ï¿½Æ° Å¬ï¿½ï¿½ ï¿½ï¿½ ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½ï¿½
         button.onClick.AddListener(OnClickHairButton);
 
-        // »óÅÂ Ã¼Å© (ÇöÀç ÀÔ°í ÀÖ´Ù¸é ¹öÆ° ºñÈ°¼ºÈ­)
+        // ï¿½ï¿½ï¿½ï¿½ Ã¼Å© (ï¿½ï¿½ï¿½ï¿½ ï¿½Ô°ï¿½ ï¿½Ö´Ù¸ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½È°ï¿½ï¿½È­)
         UpdateButtonState();
     }
 
     void OnClickHairButton()
     {
-        // ¸Å´ÏÀú¿¡°Ô ¸Ó¸®Ä«¶ô ¹Ù²ãÁÖ¼¼¿ä ¿äÃ»
+        // ï¿½Å´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ó¸ï¿½Ä«ï¿½ï¿½ ï¿½Ù²ï¿½ï¿½Ö¼ï¿½ï¿½ï¿½ ï¿½ï¿½Ã»
         manager.ChangeHair(hairPrefab);
 
-        // ¸ðµç ¹öÆ° »óÅÂ ¾÷µ¥ÀÌÆ®
+        // ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
         HairButton[] allButtons = FindObjectsByType<HairButton>(FindObjectsSortMode.None);
         foreach (var btn in allButtons)
         {
             btn.UpdateButtonState();
         }
 
-        // ¸Ó¸®Ä«¶ô ¾ø¾Ö±â ¹öÆ°µµ °»½Å
+        // ï¿½Ó¸ï¿½Ä«ï¿½ï¿½ ï¿½ï¿½ï¿½Ö±ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         RemoveHairButton removeBtn = FindFirstObjectByType<RemoveHairButton>();
         if (removeBtn != null) removeBtn.UpdateButtonState();
     }
 
-    // ÇöÀç ÀÔ°í ÀÖ´Â °Í°ú °°À¸¸é ¹öÆ° ºñÈ°¼ºÈ­
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ô°ï¿½ ï¿½Ö´ï¿½ ï¿½Í°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½È°ï¿½ï¿½È­
     public void UpdateButtonState()
     {
         if (manager == null || button == null) return;
 
-        // ÇöÀç ¸Å´ÏÀú°¡ ÀÔ°í ÀÖ´Â ¸Ó¸®Ä«¶ô°ú ³» ÇÁ¸®ÆÕ ÀÌ¸§À» ºñ±³
-        // °°À¸¸é ¹öÆ°À» ºñÈ°¼ºÈ­, ´Ù¸£¸é È°¼ºÈ­
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½Å´ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô°ï¿½ ï¿½Ö´ï¿½ ï¿½Ó¸ï¿½Ä«ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ ï¿½ï¿½
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­, ï¿½Ù¸ï¿½ï¿½ï¿½ È°ï¿½ï¿½È­
         if (manager.GetCurrentHairPrefab() == hairPrefab)
         {
             button.interactable = false;

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1056985306131048039}
   - component: {fileID: 7240958915934742861}
   - component: {fileID: 533046299681743168}
+  - component: {fileID: 4373562941167961432}
   - component: {fileID: 5064385952019091629}
   m_Layer: 0
   m_Name: CommonFurniture
@@ -77,6 +78,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ffb55545af9f5124a9988b7941e45f26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &4373562941167961432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 989756334458695406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c589d00a42715d4b89eb6ab293d4444, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!65 &5064385952019091629

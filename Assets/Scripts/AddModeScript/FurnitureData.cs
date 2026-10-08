@@ -5,13 +5,13 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewFurnitureData", menuName = "Scriptable/FurnitureData")]
 public class FurnitureData : ScriptableObject
 {
-    public string furnitureName; // °¡±¸ ÀÌ¸§
+    public string furnitureName; // ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½
     public GameObject furniturePrefab;
 
-    // À¯´ÏÆ¼ ÀÎ½ºÆåÅÍ Ã¢¿¡¼­ ÀÌ °¡±¸°¡ ¾î¶² Á¾·ùÀÎÁö °í¸¦ ¼ö ÀÖÀ½
+    // ï¿½ï¿½ï¿½ï¿½Æ¼ ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¢ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½î¶² ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public string categoryGroup;
 
-    // °¡±¸ ¸ñ·Ï ui¿¡ ¶ç¿ï ¹Ì¸®º¸±â ÀÌ¹ÌÁö
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ uiï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¹ï¿½ï¿½ï¿½
     public Sprite furnitureIcon;
 
     

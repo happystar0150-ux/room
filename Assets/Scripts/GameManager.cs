@@ -1146,6 +1146,27 @@ public class GameManager : MonoBehaviour
         GameObject confirmedFurniture =
             currentSpawnedObject;
 
+        
+
+        ObjectDrag drag =
+            confirmedFurniture
+                .GetComponent<ObjectDrag>();
+
+        if (drag != null)
+        {
+            bool attached =
+                drag.AttachToFurnitureBelow();
+
+            if (!attached)
+            {
+                Debug.LogWarning(
+                    "가구 부모 연결에 실패했습니다."
+                );
+
+                return;
+            }
+        }
+
         currentSpawnedObject = null;
         currentFurnitureData = null;
 
