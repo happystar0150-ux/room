@@ -16,4 +16,4 @@ MonoBehaviour:
   furniturePrefab: {fileID: 1227833248270616320, guid: 7baa249e92e56f246ae1d5f19c337b54,
     type: 3}
   categoryGroup: E
-  furnitureIcon: {fileID: 0}
+  furnitureIcon: {fileID: 21300000, guid: d156cd683f609df4e8d1c09bae4d3e85, type: 3}

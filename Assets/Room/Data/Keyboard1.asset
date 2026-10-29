@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
+  m_Name: Keyboard1
+  m_EditorClassIdentifier: 
+  furnitureName: Keyboard1
+  furniturePrefab: {fileID: 8762199417178611363, guid: 3072573a769b04047880b06a7f9abb11,
+    type: 3}
+  categoryGroup: E
+  furnitureIcon: {fileID: 0}
