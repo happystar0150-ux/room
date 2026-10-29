@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: Bed1
   m_EditorClassIdentifier: 
-  furnitureName: Bed1
+  furnitureName: "\uBD84\uD64D \uCE68\uB300"
   furniturePrefab: {fileID: 2268657328129026421, guid: 205813f38ad94a841be3915a37646f9d,
     type: 3}
   categoryGroup: C

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: Hanger1
   m_EditorClassIdentifier: 
-  furnitureName: Hanger1
+  furnitureName: "\uC637\uAC78\uC774"
   furniturePrefab: {fileID: 6451055827483726434, guid: acde772d358e4794e897c79d9060481a,
     type: 3}
   categoryGroup: E

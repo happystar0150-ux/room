@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: Cushion1
   m_EditorClassIdentifier: 
-  furnitureName: Cushion1
+  furnitureName: "\uCFE0\uC158"
   furniturePrefab: {fileID: 1227833248270616320, guid: 7baa249e92e56f246ae1d5f19c337b54,
     type: 3}
-  categoryGroup: E
+  categoryGroup: C
   furnitureIcon: {fileID: 21300000, guid: d156cd683f609df4e8d1c09bae4d3e85, type: 3}

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: Monitor1
   m_EditorClassIdentifier: 
-  furnitureName: Monitior1
+  furnitureName: "\uBAA8\uB2C8\uD130"
   furniturePrefab: {fileID: 3335010960261991757, guid: 80d0f0624d1960142bb2a48e08e854f1,
     type: 3}
   categoryGroup: E

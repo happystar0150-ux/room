@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: TvCabinet1
   m_EditorClassIdentifier: 
-  furnitureName: Tv Cabinet1
+  furnitureName: "TV\uC7A5"
   furniturePrefab: {fileID: 6516535118530376397, guid: bac96858a5dd7a04e95f6149bc04a770,
     type: 3}
-  categoryGroup: C
+  categoryGroup: D
   furnitureIcon: {fileID: 0}

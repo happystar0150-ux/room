@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: Keyboard1
   m_EditorClassIdentifier: 
-  furnitureName: Keyboard1
+  furnitureName: "\uD0A4\uBCF4\uB4DC"
   furniturePrefab: {fileID: 8762199417178611363, guid: 3072573a769b04047880b06a7f9abb11,
     type: 3}
   categoryGroup: E

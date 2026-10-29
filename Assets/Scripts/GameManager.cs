@@ -5,9 +5,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+[System.Serializable]
 public class CategoryButtonData
 {
     public string categoryName;
+    public GameObject categoryUI;
     public Image buttonImage;
     public Sprite normalSprite;
     public Sprite selectedSprite;
@@ -808,12 +810,11 @@ public class GameManager : MonoBehaviour
     // 가구 메뉴
     // =========================================================
 
-    public void FilterFurnitureMenu(
-        string categoryToFilter)
+    public void FilterFurnitureMenu(string categoryToFilter)
     {
-        UpdateCategoryButtonImages(
-            categoryToFilter
-        );
+        UpdateCategoryUI(categoryToFilter);
+
+        UpdateCategoryButtonImages(categoryToFilter);
 
         if (furnitureContentParent == null)
             return;
@@ -862,6 +863,27 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
+
+    private void UpdateCategoryUI(string activeCategory)
+    {
+        foreach (CategoryButtonData data in categoryButtonList)
+        {
+            if (data == null || data.categoryUI == null)
+                continue;
+
+            bool isSelected = string.Equals(
+                data.categoryName?.Trim(),
+                activeCategory?.Trim(),
+                StringComparison.OrdinalIgnoreCase
+            );
+
+            // 선택한 카테고리의 UI만 표시
+            data.categoryUI.SetActive(isSelected);
+        }
+    }
+
+
 
     // =========================================================
     // 카테고리 이미지

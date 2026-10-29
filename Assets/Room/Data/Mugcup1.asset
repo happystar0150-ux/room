@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30df327fb0b0e4a43ada51fc7cfa419e, type: 3}
   m_Name: Mugcup1
   m_EditorClassIdentifier: 
-  furnitureName: Mugcup1
+  furnitureName: "\uBA38\uADF8\uCEF5"
   furniturePrefab: {fileID: 6743107908528687185, guid: 459aa2ca60811a247936917be9e0f901,
     type: 3}
   categoryGroup: E
