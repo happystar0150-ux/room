@@ -5,8 +5,8 @@ using UnityEngine.UI;
 
 public class CategoryButton : MonoBehaviour
 {
-    // ¹öÆ°ÀÌ ´ã´çÇÒ Ä«Å×°í¸® ±ÛÀÚ
-    [Header("Ä«Å×°í¸® ÁöÁ¤")]
+    // ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    [Header("Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public string categoryName;
 
     private Button btn;
@@ -16,14 +16,14 @@ public class CategoryButton : MonoBehaviour
         btn = GetComponent<Button>();
         if (btn != null )
         {
-            // ¹öÆ°À» Å¬¸¯ÇÏ¸é ÇØ´çÇÏ´Â Ä«Å×°í¸® °¡±¸¸¦ º¸¿©ÁÜ
+            // ï¿½ï¿½Æ°ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½Ø´ï¿½ï¿½Ï´ï¿½ Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             btn.onClick.AddListener(OnClickCategory);
         }
     }
 
     private void OnClickCategory()
     {
-        // GameManager¿¡°Ô ÀÌ Ä«Å×°í¸® ±ÛÀÚ¸¦ ´øÁ®ÁÖ¸ç ¸ñ·ÏÀ» °»½ÅÇÏ¶ó°í Áö½Ã
+        // GameManagerï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ä«ï¿½×°ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¶ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (GameManager.Instance != null)
         {
             GameManager.Instance.FilterFurnitureMenu(categoryName);
